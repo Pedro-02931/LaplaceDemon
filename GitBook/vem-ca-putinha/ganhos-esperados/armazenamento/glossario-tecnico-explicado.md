@@ -23,7 +23,6 @@
 | **barrier**      | Garante ordem de escrita entre journal e dados                  | Crucial para integridade após falha de energia | —                                           |
 | **nodealalloc**  | Aloca blocos no momento da escrita                              | Menos performance, mais segurança              | _No Delayed Allocation_                     |
 | **nobh**         | Evita usar buffer heads (apenas direto via page cache)          | Leve ganho em I/O, menos abstração             | _No Buffer Heads_                           |
-| **ro**           | Monta o FS como somente leitura                                 | Zero escrita, ideal para /usr, /lib etc.       | _Read-Only_                                 |
 | **OverlayFS**    | FS que junta camadas: base + mudanças (ex: LiveCD)              | Leitura rápida e gravação em camada superior   | _Overlay File System_                       |
 | **squashfs**     | FS comprimido, somente leitura                                  | Excelente para imagens imutáveis               | _Squashed File System_                      |
 | **f2fs**         | FS otimizado para NAND flash/SSD                                | Reduz wear-leveling, melhora latência          | _Flash-Friendly File System_                |
