@@ -152,3 +152,104 @@ tmpfs              /dev/shm        tmpfs   defaults,size=8G,noatime,nodev,nosuid
 - As labels não estão sendo usadas aqui, só os UUIDs — mais confiável.
 
 Se você quiser, posso também te gerar um script que detecta e gera automaticamente esse `fstab` com base nos UUIDs encontrados. Quer isso também?
+
+---
+
+Valeu por compartilhar tudo — agora dá pra analisar com **precisão cirúrgica**. Vamos direto ao ponto:
+
+---
+
+## ⚠️ Resumo dos Resultados
+
+| Teste | Resultado | Comentário |
+|------|------------|------------|
+| GRUB_CMDLINE_LINUX | `GRUB_CMDLINE_LINUX=""` | ✅ Pode funcionar, **mas é melhor forçar root=UUID=...** |
+| `/sbin/init` | Link para `/lib/systemd/systemd` | ✅ Está OK, isso é o esperado |
+| `/init` | Ausente | ✅ Isso é normal em Debian com systemd |
+| Initrd contém LVM | ✅ Sim, tem os arquivos essenciais do LVM |
+| GRUB aponta pro kernel/initrd | ✅ Sim, 100% ok |
+| Root no GRUB usa UUID? | ❌ **Não! Está usando `/dev/mapper/vg0-root`** |
+| LVM está ativo | ✅ Perfeito |
+
+---
+
+## 💥 Perigo real: GRUB não está usando UUID no root
+
+Usar `/dev/mapper/vg0-root` pode funcionar, **mas é arriscado**, principalmente se os nomes mudarem ou o initrd não ativar o LVM cedo o suficiente. **UUID é mais robusto e recomendado.**
+
+---
+
+## ✅ Correção segura recomendada
+
+### 1. Pegue o UUID da root
+```bash
+blkid /dev/mapper/vg0-root
+```
+
+Exemplo de saída:
+```
+/dev/mapper/vg0-root: UUID="6c673e2a-6465-492f-b7c2-1fb7d0a08d59" TYPE="ext4"
+```
+
+### 2. Edite o GRUB para usar UUID
+Abra `/etc/default/grub`:
+
+```bash
+nano /etc/default/grub
+```
+
+E **modifique** a linha:
+```bash
+GRUB_CMDLINE_LINUX="root=UUID=6c673e2a-6465-492f-b7c2-1fb7d0a08d59"
+```
+
+> Substitua pelo UUID real da sua root.
+
+### 3. Atualize o GRUB
+
+Ainda dentro do chroot:
+```bash
+update-grub
+```
+
+---
+
+## ✅ (Opcional, mas recomendado) Regenerar initramfs
+
+Só pra garantir que os módulos de LVM e config estejam certos:
+
+```bash
+update-initramfs -u -k all
+```
+
+---
+
+## ✅ (Opcional 2) Entrada de fallback no GRUB
+
+Se quiser adicionar uma entrada segura para recovery, abra `/etc/grub.d/40_custom` e adicione:
+
+```bash
+menuentry "FlatLine Rescue" {
+    insmod gzio
+    insmod part_gpt
+    insmod lvm
+    insmod ext2
+    set root='lvm/vg0-root'
+    linux /vmlinuz-6.1.0-32-amd64 root=UUID=6c673e2a-6465-492f-b7c2-1fb7d0a08d59 ro single
+    initrd /initrd.img-6.1.0-32-amd64
+}
+```
+
+Depois:
+```bash
+update-grub
+```
+
+---
+
+## 🚀 Agora sim: seguro pra reiniciar
+
+Se **todos os testes passaram e GRUB foi ajustado com UUID**, você está 99.9% blindado contra kernel panic.  
+Reinicie e fica atento: se demorar pra subir, já tenta `Esc` ou `Shift` pra entrar no GRUB e acessar o "Rescue".
+
+Se quiser, posso ainda gerar um script de verificação de boot em loop, via systemd. Precisa disso também?
