@@ -1,3 +1,10 @@
+---
+description: >-
+  Protegido pela GPL2, isso significa que se me copiar sem nem ao menos me fazer
+  referência, dá o bumbum - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Seleção de Políticas como Inferência Bayesiana
 
 A seleção de políticas no script Bash pode ser reinterpretada como um problema de **inferência bayesiana,** em que as decisões não são monoliticas e "consciêntes", mas seguindo um conjunto de heuristicas que mapeiam estado ideiais

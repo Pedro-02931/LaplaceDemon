@@ -1,3 +1,10 @@
+---
+description: >-
+  Protegido pela GPL2, isso significa que se me copiar sem nem ao menos me fazer
+  referência, dá o bumbum - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Memoria de Curto Prazo
 
 O cache em `LAST_STATE` funciona como um _modelo de transição de estados_ bayesiano, onde através de calculos médios, consegui aplicar uma cadeia markoviana para saber a demanda do sistema, e a cada ciclo, á a função de colapso de onda:

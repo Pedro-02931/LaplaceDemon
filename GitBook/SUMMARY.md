@@ -13,7 +13,8 @@
 ## Concepção
 
 * [Setup Inicial](concepcao/setup-inicial/README.md)
-  * [LiveCD e Kernel Panics](concepcao/setup-inicial/livecd-e-kernel-panics.md)
+  * [LiveCD e Kernel Panics](concepcao/setup-inicial/livecd-e-kernel-panics/README.md)
+    * [Cabeçalho](concepcao/setup-inicial/livecd-e-kernel-panics/cabecalho.md)
   * [SO](concepcao/setup-inicial/so/README.md)
     * [FS](concepcao/setup-inicial/so/fs.md)
 

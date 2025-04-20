@@ -1,3 +1,10 @@
+---
+description: >-
+  Protegido pela GPL2, isso significa que se me copiar sem nem ao menos me fazer
+  referência, dá o bumbum - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Explicando Bayes
 
 Bom, indo para a parte um pouco mais parruda, o conceito de sistemas autoadaptativos exige uma ponte entre observação empírica e ação proativa, onde a chave não está na complexidade ao carregar uma carahada de parametros, mas e sim na simplicidade de escoher a mellhor opçõa já mapeada.&#x20;

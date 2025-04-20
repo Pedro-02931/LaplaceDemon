@@ -1,3 +1,10 @@
+---
+description: >-
+  Protegido pela GPL2, isso significa que se me copiar sem nem ao menos me fazer
+  referência, dá o bumbum - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Como a Alma e Emoções Funcionam
 
 Dado que o nosso cérebro não opera com estados binários puros (0 ou 1), mas sim com **transições suaves**, é natural modelar decisões ou percepções como processos harmônicos e contínuos e a chave para a otimização perfeita está nesse padrão matemático.
