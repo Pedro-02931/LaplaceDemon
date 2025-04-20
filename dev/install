@@ -1,0 +1,245 @@
+#!/bin/bash
+# 💽 FLATLINE: Script de instalação completo com particionamento, formatação, cópia do sistema e otimizações
+# Autor: pmota | Revisado por ChatGPT
+set -euo pipefail
+
+# ----------------------------------------
+# 🧠 VARIÁVEIS GLOBAIS
+# ----------------------------------------
+DISK="/dev/sda"
+VG="vg0"
+USER_NAME="pmota"
+
+# ----------------------------------------
+# 🧹 PREPARAR DISCO E CRIAR PARTIÇÕES
+# ----------------------------------------
+preparar_disco() {
+    echo ">> Limpando disco $DISK..."
+    umount -R /mnt || true
+    swapoff -a || true
+    dmsetup remove_all || true
+    umount "${DISK}"* || true
+
+    wipefs -a "$DISK"
+    sgdisk --zap-all "$DISK"
+    dd if=/dev/zero of="$DISK" bs=1M count=10 status=progress
+    partprobe "$DISK"
+    sleep 2
+    udevadm settle
+
+    echo ">> Criando partições (EFI + BOOT + LVM)..."
+    sgdisk --new=1:0:+512M --typecode=1:ef00 --change-name=1:"Cortex-Boot-EFI" "$DISK"
+    sgdisk --new=2:0:+1G   --typecode=2:8300 --change-name=2:"Cerebellum-Boot" "$DISK"
+    sgdisk --new=3:0:0     --typecode=3:8e00 --change-name=3:"Brainstem-LVM" "$DISK"
+
+    partprobe "$DISK"
+    sleep 2
+    udevadm settle
+}
+
+# ----------------------------------------
+# 💡 CONFIGURAR LVM
+# ----------------------------------------
+configurar_lvm() {
+    echo ">> Configurando LVM..."
+    vgremove -f $VG || true
+    pvcreate -ff -y "${DISK}3"
+    vgcreate $VG "${DISK}3"
+
+    lvcreate -n root -l 20%VG $VG
+    lvcreate -n var  -l 5%VG  $VG
+    lvcreate -n tmp  -l 2%VG  $VG
+    lvcreate -n usr  -l 25%VG $VG
+    lvcreate -n home -l 100%FREE $VG
+}
+
+# ----------------------------------------
+# 🧾 FORMATAR SISTEMAS DE ARQUIVOS
+# ----------------------------------------
+formatar_particoes() {
+    echo ">> Formatando partições..."
+    mkfs.vfat -F32 -n EFI "${DISK}1"
+    mkfs.ext4 -q -L BOOT "${DISK}2"
+
+    for lv in root var tmp usr home; do
+        mkfs.ext4 -q -L "$(echo $lv | tr a-z A-Z)" "/dev/$VG/$lv"
+        tune2fs -o journal_data_writeback "/dev/$VG/$lv"
+    done
+}
+
+# ----------------------------------------
+# 🔗 MONTAR PARTIÇÕES
+# ----------------------------------------
+montar_particoes() {
+    echo ">> Montando partições..."
+    mount /dev/$VG/root /mnt
+    mkdir -p /mnt/{boot,home,var,tmp,usr}
+    mount /dev/$VG/home /mnt/home
+    mount /dev/$VG/var /mnt/var
+    mount /dev/$VG/tmp /mnt/tmp
+    mount /dev/$VG/usr /mnt/usr
+
+    mount "${DISK}2" /mnt/boot
+    mkdir -p /mnt/boot/efi
+    mount "${DISK}1" /mnt/boot/efi
+}
+
+# ----------------------------------------
+# 📁 COPIAR SISTEMA EXISTENTE PARA /mnt
+# ----------------------------------------
+copiar_arquivos() {
+    echo ">> Copiando sistema base..."
+    rsync -aAXv / /mnt \
+      --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"}
+}
+
+# ----------------------------------------
+# 📄 GERAR FSTAB OTIMIZADO
+# ----------------------------------------
+gerar_fstab() {
+    echo ">> Gerando /etc/fstab..."
+    get_uuid() { blkid -s UUID -o value "$1"; }
+
+    cat <<EOF > /mnt/etc/fstab
+# /etc/fstab - Gerado automaticamente
+UUID=$(get_uuid /dev/mapper/$VG-root)   /               ext4    defaults,noatime,discard,commit=60,errors=remount-ro  0 1
+UUID=$(get_uuid ${DISK}1)               /boot/efi       vfat    defaults,noatime,uid=0,gid=0,umask=0077,shortname=winnt  0 1
+UUID=$(get_uuid ${DISK}2)               /boot           ext4    defaults,noatime,errors=remount-ro  0 1
+UUID=$(get_uuid /dev/mapper/$VG-home)   /home           xfs     defaults,noatime,allocsize=512m,logbufs=8,inode64  0 2
+UUID=$(get_uuid /dev/mapper/$VG-usr)    /usr            ext4    ro,noatime,errors=remount-ro,commit=120  0 1
+UUID=$(get_uuid /dev/mapper/$VG-var)    /var            ext4    defaults,noatime,data=journal,commit=30  0 2
+UUID=$(get_uuid /dev/mapper/$VG-tmp)    /tmp            ext4    defaults,noatime,nosuid,nodev  0 2
+
+tmpfs             /working        tmpfs   defaults,size=4G,noatime,nodev,nosuid,mode=1777  0 0
+tmpfs             /sensory/tmp    tmpfs   defaults,size=2G,noatime,nodev,nosuid,mode=1777  0 0
+tmpfs             /dev/shm        tmpfs   defaults,size=8G,noatime,nodev,nosuid,mode=1777  0 0
+
+/cognitive/cerebellum/.config /home/$USER_NAME/.config none bind 0 0
+EOF
+}
+
+# ----------------------------------------
+# 🧠 OTIMIZAÇÕES DE SISTEMA
+# ----------------------------------------
+configurar_sysctl() {
+    cat <<EOF > /etc/sysctl.d/99-neurofocus.conf
+vm.swappiness=10
+vm.vfs_cache_pressure=50
+fs.inotify.max_user_watches=524288
+EOF
+
+    cat <<EOF > /etc/sysctl.d/99-neuro-memory.conf
+vm.swappiness=30
+vm.dirty_ratio=15
+vm.dirty_background_ratio=3
+vm.vfs_cache_pressure=50
+vm.watermark_scale_factor=200
+EOF
+
+    sysctl --system
+}
+
+configurar_io_scheduler() {
+    cat <<EOF > /etc/udev/rules.d/60-iosched.rules
+ACTION=="add|change", KERNEL=="sd[a-z]|nvme[0-9]n[0-9]", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="mq-deadline"
+EOF
+    udevadm control --reload-rules && udevadm trigger
+    apt install -y tuned
+    tuned-adm profile latency-performance
+    systemctl enable --now tuned.service
+}
+
+# ----------------------------------------
+# 🔧 CHROOT + CONFIG
+# ----------------------------------------
+chroot_config() {
+    mount -t proc /proc /mnt/proc
+    mount --rbind /sys /mnt/sys
+    mount --rbind /dev /mnt/dev
+
+    cp /etc/resolv.conf /mnt/etc/resolv.conf || true
+
+    chroot /mnt /bin/bash <<EOF
+gerar_fstab
+echo "FlatLine" > /etc/hostname
+configurar_sysctl
+setup
+configurar_io_scheduler
+EOF
+}
+
+# ----------------------------------------
+# 🌐 INSTALAR BÁSICO E SOFTWARE
+# ----------------------------------------
+setup() {
+    tee /etc/apt/sources.list > /dev/null <<EOF
+deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian bookworm-updates main non-free-firmware
+deb http://security.debian.org/debian-security bookworm-security main non-free-firmware
+deb http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware
+EOF
+
+    apt update && apt full-upgrade -y
+
+    local p=(
+        build-essential default-jdk libssl-dev exuberant-ctags ack silversearcher-ag
+        fontconfig imagemagick libmagickwand-dev software-properties-common vim-gtk3 curl
+        neovim cmdtest npm git ufw fail2ban python3 python3-pip python3-venv
+        cpufrequtils tlp numactl preload firmware-linux firmware-iwlwifi firmware-realtek
+        mesa-utils mesa-vulkan-drivers vulkan-tools libvulkan1 gamemode
+    )
+
+    apt install -y "${p[@]}"
+
+    # Pós-instalação
+    command -v python >/dev/null || ln -s /usr/bin/python3 /usr/local/bin/python
+    pip3 install --upgrade pip
+
+    systemctl enable --now tlp preload ufw fail2ban
+}
+
+instalar_mozilla_code() {
+    install -d -m 0755 /etc/apt/keyrings
+    apt install -y wget gpg
+    wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | tee /etc/apt/keyrings/packages.mozilla.org.asc >/dev/null
+
+    tee /etc/apt/sources.list.d/mozilla.list >/dev/null <<EOF
+deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main
+EOF
+
+    tee /etc/apt/preferences.d/mozilla >/dev/null <<EOF
+Package: *
+Pin: origin packages.mozilla.org
+Pin-Priority: 1000
+EOF
+
+    apt update
+    apt install -y firefox
+    apt purge -y firefox-esr
+    apt autoremove -y
+
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
+
+    tee /etc/apt/sources.list.d/vscode.list >/dev/null <<EOF
+deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main
+EOF
+
+    apt update
+    apt install -y code
+}
+
+# ----------------------------------------
+# 🚀 EXECUÇÃO
+# ----------------------------------------
+main() {
+    preparar_disco
+    configurar_lvm
+    formatar_particoes
+    montar_particoes
+    copiar_arquivos
+    gerar_fstab
+    chroot_config
+    instalar_mozilla_code
+}
+
+main
