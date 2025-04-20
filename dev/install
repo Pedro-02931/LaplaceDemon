@@ -98,23 +98,21 @@ copiar_arquivos() {
 # ----------------------------------------
 gerar_fstab() {
     echo ">> Gerando /etc/fstab..."
-    get_uuid() { blkid -s UUID -o value "$1"; }
-
     cat <<EOF > /mnt/etc/fstab
 # /etc/fstab - Gerado automaticamente
-UUID=$(get_uuid /dev/mapper/$VG-root)   /               ext4    defaults,noatime,discard,commit=60,errors=remount-ro  0 1
-UUID=$(get_uuid ${DISK}1)               /boot/efi       vfat    defaults,noatime,uid=0,gid=0,umask=0077,shortname=winnt  0 1
-UUID=$(get_uuid ${DISK}2)               /boot           ext4    defaults,noatime,errors=remount-ro  0 1
-UUID=$(get_uuid /dev/mapper/$VG-home)   /home           xfs     defaults,noatime,allocsize=512m,logbufs=8,inode64  0 2
-UUID=$(get_uuid /dev/mapper/$VG-usr)    /usr            ext4    ro,noatime,errors=remount-ro,commit=120  0 1
-UUID=$(get_uuid /dev/mapper/$VG-var)    /var            ext4    defaults,noatime,data=journal,commit=30  0 2
-UUID=$(get_uuid /dev/mapper/$VG-tmp)    /tmp            ext4    defaults,noatime,nosuid,nodev  0 2
+UUID=6c673e2a-6465-492f-b7c2-1fb7d0a08d59   /               ext4    defaults,noatime,discard,commit=60,errors=remount-ro  0 1
+UUID=EEDE-BA76                              /boot/efi       vfat    defaults,noatime,uid=0,gid=0,umask=0077,shortname=winnt  0 1
+UUID=618de8eb-ceca-4f27-b6b2-2cef60c2b0cd   /boot           ext4    defaults,noatime,errors=remount-ro  0 1
+UUID=4aca7fd9-ab85-43c4-b250-7ee9c5120899   /home           ext4    defaults,noatime  0 2
+UUID=9cb98cb5-6b9e-4834-ba8e-632fc7a2de3c   /usr            ext4    ro,noatime,errors=remount-ro,commit=120  0 1
+UUID=85f1aaa1-946e-45a1-a455-a540de1ba3b5   /var            ext4    defaults,noatime,data=journal,commit=30  0 2
+UUID=2169e98c-a6e1-481c-b8ba-3946acaecf06   /tmp            ext4    defaults,noatime,nosuid,nodev  0 2
 
 tmpfs             /working        tmpfs   defaults,size=4G,noatime,nodev,nosuid,mode=1777  0 0
 tmpfs             /sensory/tmp    tmpfs   defaults,size=2G,noatime,nodev,nosuid,mode=1777  0 0
 tmpfs             /dev/shm        tmpfs   defaults,size=8G,noatime,nodev,nosuid,mode=1777  0 0
 
-/cognitive/cerebellum/.config /home/$USER_NAME/.config none bind 0 0
+/cognitive/cerebellum/.config /home/pmota/.config none bind 0 0
 EOF
 }
 
@@ -164,6 +162,8 @@ gerar_fstab
 echo "FlatLine" > /etc/hostname
 configurar_sysctl
 setup
+instalar_grub
+criar_usuario_pmota
 configurar_io_scheduler
 EOF
 }
@@ -186,16 +186,28 @@ EOF
         fontconfig imagemagick libmagickwand-dev software-properties-common vim-gtk3 curl
         neovim cmdtest npm git ufw fail2ban python3 python3-pip python3-venv
         cpufrequtils tlp numactl preload firmware-linux firmware-iwlwifi firmware-realtek
-        mesa-utils mesa-vulkan-drivers vulkan-tools libvulkan1 gamemode
+        mesa-utils mesa-vulkan-drivers vulkan-tools libvulkan1 gamemode grub-efi grub-efi-amd64 grub-efi-amd64-signed
     )
 
     apt install -y "${p[@]}"
 
-    # Pós-instalação
     command -v python >/dev/null || ln -s /usr/bin/python3 /usr/local/bin/python
     pip3 install --upgrade pip
 
     systemctl enable --now tlp preload ufw fail2ban
+}
+
+instalar_grub() {
+    echo ">> Instalando GRUB..."
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian --recheck
+    update-grub
+}
+
+criar_usuario_pmota() {
+    echo ">> Criando usuário pmota..."
+    useradd -m -s /bin/bash -c "FlatLine" pmota
+    echo "pmota:5826" | chpasswd
+    usermod -aG sudo,adm,lp,plugdev,audio,video pmota
 }
 
 instalar_mozilla_code() {
