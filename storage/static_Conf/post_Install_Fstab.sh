@@ -1,4 +1,34 @@
 #!/bin/bash
+# -*- coding: utf-8 -*-
+#
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║                      Copyright (C) 2025 FlatLine                             ║
+# ║                                                                              ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║                                                                              ║
+# ║ Este programa é software livre; você pode redistribuí-lo e/ou modificá-lo    ║
+# ║ sob os termos da Licença Pública Geral GNU, conforme publicada pela Free     ║
+# ║ Software Foundation; tanto a versão 2 da Licença como (a seu critério)       ║
+# ║ qualquer versão mais nova.                                                   ║
+# ║                                                                              ║
+# ║ Este programa é distribuído na expectativa de ser útil, mas SEM QUALQUER     ║
+# ║ GARANTIA; nem mesmo a garantia implícita de COMERCIALIZAÇÃO ou de            ║
+# ║ ADEQUAÇÃO A QUALQUER PROPÓSITO EM PARTICULAR. Consulte a Licença Pública     ║
+# ║ Geral GNU para obter mais detalhes.                                          ║
+# ║                                                                              ║
+# ║ Você deve ter recebido uma cópia da Licença Pública Geral GNU junto com      ║
+# ║ este programa; se não, escreva para a Free Software Foundation, Inc.,        ║
+# ║ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.                  ║
+# ║                                                                              ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║                                                                              ║
+# ║ Tradução: Se me copiar sem nem ao menos me indicar, dá o bumbum,             ║
+# ║ PS1: Passei esse script no saco,                                             ║
+# ║ PS2: Comi o cu de quem ta lendo,                                             ║
+# ║ PS3: Esse projeto e a prova cabal de que sou autista e preciso transar!      ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
 set -euo pipefail
 
 # ----------------------------------------
