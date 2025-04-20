@@ -21,4 +21,7 @@
 
 ## Vem ca Putinha
 
-* [Ganhos Esperados](vem-ca-putinha/ganhos-esperados.md)
+* [Ganhos Esperados](vem-ca-putinha/ganhos-esperados/README.md)
+  * [Armazenamento](vem-ca-putinha/ganhos-esperados/armazenamento/README.md)
+    * [Comparação com a Formatação Tradicional: Vantagens Reais da Configuração Otimizada](vem-ca-putinha/ganhos-esperados/armazenamento/comparacao-com-a-formatacao-tradicional-vantagens-reais-da-configuracao-otimizada.md)
+    * [Glossário Técnico Explicado](vem-ca-putinha/ganhos-esperados/armazenamento/glossario-tecnico-explicado.md)
