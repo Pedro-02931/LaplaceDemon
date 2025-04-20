@@ -14,6 +14,8 @@
 
 * [Setup Inicial](concepcao/setup-inicial/README.md)
   * [LiveCD e Kernel Panics](concepcao/setup-inicial/livecd-e-kernel-panics.md)
+  * [SO](concepcao/setup-inicial/so/README.md)
+    * [FS](concepcao/setup-inicial/so/fs.md)
 
 ## Automação
 
