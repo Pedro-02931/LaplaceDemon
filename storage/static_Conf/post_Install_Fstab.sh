@@ -51,7 +51,7 @@ get_uuid() {
 
 # Gerar o conteúdo do fstab
 gerar_fstab() {
-    dl ">> Gerando fstab em $FSTAB_PATH..."
+    d_l ">> Gerando fstab em $FSTAB_PATH..."
 
     mkdir -p "$(dirname "$FSTAB_PATH")"
 
@@ -74,7 +74,7 @@ tmpfs             /dev/shm        tmpfs   defaults,size=8G,noatime,nodev,nosuid,
 /cognitive/cerebellum/.config /home/$USER_NAME/.config none bind 0 0
 EOF
 
-    dl "✅ fstab gerado com sucesso!"
+    d_l "✅ fstab gerado com sucesso!"
 }
 
 # Execução
