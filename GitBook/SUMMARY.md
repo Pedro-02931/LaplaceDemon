@@ -28,6 +28,7 @@
       * [Glossario Tecnico Explicado](concepcao/setup-inicial/livecd-e-kernel-panics/formatar-e-aplicar-otimizacoes/glossario-tecnico-explicado.md)
   * [Sistema Operacional](concepcao/setup-inicial/sistema-operacional/README.md)
     * [Criando /etc/fstab](concepcao/setup-inicial/sistema-operacional/criando-etc-fstab.md)
+    * [Page 2](concepcao/setup-inicial/sistema-operacional/page-2.md)
 
 ## Automação
 
