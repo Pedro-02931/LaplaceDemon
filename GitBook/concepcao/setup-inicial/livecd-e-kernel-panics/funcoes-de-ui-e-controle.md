@@ -6,6 +6,7 @@ Aqui, decidi implementar uma tecnica de renderização para conforto do usuário
 
 A `confirmar_execucao` é auto-explicativa, enquanto `ja_executado` e `marcar_como_executado` usam o `CONTROL_FILE` para saber se uma etapa crucial já foi feita, impedindo repetições desnecessárias e potencialmente perigosas, como tentar criar partições em um disco já particionado ou apenas evitar sobreescritas desnecessária.
 
+{% code overflow="wrap" %}
 ```bash
 d_l() {
     local t="$1"
@@ -33,3 +34,4 @@ marcar_como_executado() {
 
 
 ```
+{% endcode %}

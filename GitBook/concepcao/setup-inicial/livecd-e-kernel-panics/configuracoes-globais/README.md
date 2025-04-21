@@ -8,58 +8,47 @@ Assim, usado o conceito de bayes onde o laço for é o observador e o array é o
 >
 > * `vfat`: a linguagem dos ancestrais — universal, simples, reconhecida até por entidades obscuras lovecraftanas.
 > * `-F32 -n EFI`: define a estrutura como FAT32 e nomeia.
-> * `noatime,nodiratime`: elimina ruído temporal evitando a escrita de metadados para cada acesso.
-> * `flush`: sincronia total, em que cada ação é gravada como promessa cumprida, sem cache, sem delay.
+> * `noatime,nodiratime`: elimina escrita de metadados desnecessários
+> * `flush`: Força sincronização de buffers após escrita. Mais segura, mas mais lenta: escreve direto no disco
 >
 > `["BOOT"]="ext4 "-q -L BOOT" "" data=writeback,noatime,discard"`
 >
 > * `ext4`: filesystem de confiança, equilibrado entre legado e potência, sendo muito usado no Linux.
-> * `data=writeback`: escrita preguiçosa.
-> * `noatime`: evita registro de acessos triviais.
-> * `discard`: joga fora o que não serve, permitido por integração com SSD.
+> * `data=writeback`: escrita preguiçosa, onde os dados são escritos antes do journaling (equivalente a pensar).
+> * `discard`: Informa ao SSD quais blocos não são mais usados, funcionando como gatilho para o comando TRIM via hardware
 >
 > `["root"]="btrfs "-L ROOT -f" "" compress=zstd:3,noatime,space_cache=v2,ssd,autodefrag"`
 >
-> * `btrfs`: suporta snapshots, compressão, e resiliência.
+> * `btrfs`: Sistema copy-on-write, suporta compressão e snapshots. Dinâmico, moderno, pode fragmentar sem autodefrag
 > * `compress=zstd:3`: compressão entrópica moderada, mantendo equilíbrio entre espaço e performance.
-> * `space_cache=v2`: melhora a alocação no tempo-espaço.
-> * `autodefrag`: reorganiza fragmentos.
-> * `ssd`: ativa o modo de operação de velocidade
+> * `space_cache=v2`: Cache de espaço livre otimizado, em que necessita de menos consulta no disco para alocação
+> * `autodefrag`: Fragmentação corrigida dinamicamente reordenando blocos com base em acesso real
+> * `ssd`: Ativa heurísticas otimizadas para SSD reduzindo desgaste, melhora TRIM e flushing
 >
 > `["var"]="ext4 "-q -L VAR" "-o journal_data_writeback" data=journal,barrier=0"`&#x20;
 >
-> * `journal_data_writeback`: não espera para escrever no jounal
-> * `data=journal`: mas ainda mantém um diário — toda escrita é registrada primeiro, confiável.
-> * `barrier=0`:  menos seguro, mas mais ágil.
+> * `journal_data_writeback`: Usa journal, mas não sincroniza dados gravando posteriormente, aumentando a performance
+> * `data=journal`: Primeiro grava dados no journal, depois no local final, onde é mais seguro, porém mais uso de I/O
+> * `barrier=0`:  Desliga garantias de ordem via cache de disco , e embora tenha risco em power loss, há  ganho de performance
 >
 > `["tmp"]="ext4 "-q -L TMP" "" noatime,nodiratime,nodev,nosuid,noexec,discard"`
 >
-> * `nodev,nosuid,noexec`: anada executa, nada assume identidade, tudo é efêmero, cumprindo objetivo tmp
-> * `discard`: lixo levado com o vento.
-> * `noatime,nodiratime`: não perde tempo lembrando do que é descartável.
+> * Tudo já explicado
 >
 > `["usr"]="ext4 "-q -L USR" "" noatime,nodiratime,discard,commit=120"`
 >
 > * `commit=120`: escreve de tempos em tempos — eficiência acima de tudo, mesmo que implique esquecer algo em caso de falha.
-> * `discard`: remove vestígios residuais — SSD agradece.
-> * `noatime,nodiratime`: leitura silencios
 >
 > `["home"]="btrfs "-L HOME -f" "" compress=zstd:1,autodefrag,noatime,space_cache=v2,ssd"`
 >
-> * `compress=zstd:1`: compressão leve — valoriza a performance sem abrir mão da organização.
-> * `autodefrag`: adapta-se conforme os hábitos mudam.
-> * `noatime`: não julga o que é aberto.
-> * `space_cache`, `ssd`: garante que a experiência seja suave e responsiva.
+> * Já explicado
 >
 > `["swap"]="swap "-L SWAP" "" discard,pri=100"`
 >
-> * `discard`: reciclagem automática de sonhos descartáveis.
 > * `pri=100`: alta prioridade — pronto para agir quando a RAM falhar.
 
-```
-# ----------------------------------------
-# 🔧 CONFIGURAÇÕES GLOBAIS
-# ----------------------------------------
+{% code overflow="wrap" %}
+```bash
 VG="vg_opt"
 MOUNTROOT="/mnt"
 
@@ -87,6 +76,7 @@ declare -A MEMORIA_CRUZADA=(
     ["swap"]="swap \"-L SWAP\" \"\" discard,pri=100"
 )
 ```
+{% endcode %}
 
 
 
