@@ -15,6 +15,9 @@
 * [Setup Inicial](concepcao/setup-inicial/README.md)
   * [LiveCD e Kernel Panics](concepcao/setup-inicial/livecd-e-kernel-panics/README.md)
     * [Cabeçalho](concepcao/setup-inicial/livecd-e-kernel-panics/cabecalho.md)
+    * [Funções de UI e Controle](concepcao/setup-inicial/livecd-e-kernel-panics/funcoes-de-ui-e-controle.md)
+    * [Configurações Globais](concepcao/setup-inicial/livecd-e-kernel-panics/configuracoes-globais/README.md)
+      * [Glossario Tecnico Explicado](concepcao/setup-inicial/livecd-e-kernel-panics/configuracoes-globais/glossario-tecnico-explicado.md)
   * [SO](concepcao/setup-inicial/so/README.md)
     * [FS](concepcao/setup-inicial/so/fs.md)
 

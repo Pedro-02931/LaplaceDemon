@@ -19,7 +19,8 @@ O `LOG_DIR` foi focado mais para a otimização e debug com o uso de LLMs, onde 
 
 A linha `set -euo pipefail` manda o script parar imediatamente se qualquer comando falhar, evitando cascata de erros, enquanto o `trap` é o botão de emergência que avisa onde o problema aconteceu antes de abortar a missão, assim eu consigo debugar de forma mais eficiente, onde a quantidade de dados iniciais que define a acertividade final.
 
-<pre><code>#!/bin/bash
+```
+#!/bin/bash
 # -*- coding: utf-8 -*-
 # (...) Cabeçalho de licença e comentários (...)
 
@@ -37,84 +38,8 @@ touch "$LOG_FILE" "$CONTROL_FILE"
 # ----------------------------------------
 # 🚨 TRAP DE ERROS
 # ----------------------------------------
-trap 'echo "Erro na linha $LINENO" | tee -a "$LOG_FILE" >&#x26;2; exit 1' ERR
-
-<strong># ----------------------------------------
-</strong># 🖋️ FUNÇÕES DE UI E CONTROLE
-# ----------------------------------------
-d_l() {
-    local t="$1"
-    for ((i=0; i&#x3C;${#t}; i++)); do
-        echo -n "${t:i:1}"
-        sleep 0.02
-    done
-    echo
-}
-
-confirmar_execucao() {
-    local acao="$1"
-    d_l "$acao"
-    read -p "Deseja aplicar esta configuração? [s/N]: " resp
-    [[ "$resp" =~ ^[sS]$ ]]
-}
-
-ja_executado() {
-    grep -qFx "$1" "$CONTROL_FILE" 2>/dev/null
-}
-
-marcar_como_executado() {
-    echo "$1" >> "$CONTROL_FILE"
-}
-
-# ----------------------------------------
-# 🔧 CONFIGURAÇÕES GLOBAIS
-# ----------------------------------------
-VG="vg_opt"
-MOUNTROOT="/mnt"
-
-declare -A PERCENTUAIS=(
-    [root]=20
-    [var]=5
-    [tmp]=2
-    [usr]=25
-)
-TOTAL_PCT=0
-for pct in "${PERCENTUAIS[@]}"; do
-    TOTAL_PCT=$((TOTAL_PCT + pct))
-done
-PERCENTUAIS[home]=$((100 - TOTAL_PCT))
-PERCENTUAIS[swap]=5
-
-declare -A OTIMIZACOES=(
-    ["EFI"]="vfat \"-F32 -n EFI\" \"\" noatime,nodiratime,flush"
-    ["BOOT"]="ext4 \"-q -L BOOT\" \"\" data=writeback,noatime,discard"
-    ["root"]="btrfs \"-L ROOT -f\" \"\" compress=zstd:3,noatime,space_cache=v2,ssd,autodefrag"
-    ["var"]="ext4 \"-q -L VAR\" \"-o journal_data_writeback\" data=journal,barrier=0"
-    ["tmp"]="ext4 \"-q -L TMP\" \"\" noatime,nodiratime,nodev,nosuid,noexec,discard"
-    ["usr"]="ext4 \"-q -L USR\" \"\" noatime,nodiratime,discard,commit=120"
-    ["home"]="btrfs \"-L HOME -f\" \"\" compress=zstd:1,autodefrag,noatime,space_cache=v2,ssd"
-    ["swap"]="swap \"-L SWAP\" \"\" discard,pri=100"
-)
-</code></pre>
-
-As funções `d_l`, `confirmar_execucao`, `ja_executado` e `marcar_como_executado` são a interface com o usuário e o controle de fluxo, `d_l` dá aquele efeito de digitação charmoso mas principalmente ajuda a acompanhar o que está acontecendo em tempo real, `confirmar_execucao` é a trava de segurança final pedindo permissão antes de ações drásticas como apagar um disco, funcionando como aquele aviso "Tem certeza que deseja excluir permanentemente?" que evita desastres; `ja_executado` e `marcar_como_executado` usam o `CONTROL_FILE` para saber se uma etapa crucial já foi feita, impedindo repetições desnecessárias e potencialmente perigosas, como tentar criar partições em um disco já particionado. Por fim, as variáveis `VG`, `MOUNTROOT` e os arrays `PERCENTUAIS` e `OTIMIZACOES` são o coração da configuração, definindo o nome do grupo LVM, onde montar temporariamente, como dividir o espaço percentualmente entre as partições lógicas (calculando o `home` dinamicamente para usar 100% do espaço) e quais sistemas de arquivos e opções de otimização usar para cada parte do sistema, desde o EFI até o swap, é o planejamento mestre, a planta baixa do nosso sistema otimizado.
-
-## Ganhos em Relação Entre o Método Tradicional e o Meu
-
-No método tradicional, muitas vezes a configuração é feita na base do "próximo, próximo, concluir", usando padrões genéricos que não levam em conta o uso específico de cada parte do sistema nem as características do hardware moderno como SSDs, resultando em um sistema funcional mas longe do ideal, como usar as mesmas ferramentas para apertar um parafuso delicado e quebrar uma parede, funciona mas com muita ineficiência e potencial para dano. A falta de um controle de execução robusto também significa que rodar o script de novo por acidente ou após uma falha parcial poderia levar a resultados imprevisíveis ou até perda de dados, sem falar na ausência de logs detalhados que dificultam diagnosticar problemas, é como dirigir sem cinto de segurança e sem painel de instrumentos, você pode até chegar ao destino, mas o risco é alto e você não sabe se o motor está prestes a explodir.
-
-Meu método implementa desde o início um controle rigoroso e configurações pensadas, o `set -euo pipefail` e o `trap` garantem que o processo pare ao menor sinal de problema, enquanto os arquivos de log e controle (`LOG_FILE`, `CONTROL_FILE`) oferecem rastreabilidade e idempotência, ou seja, a capacidade de rodar o script várias vezes obtendo o mesmo resultado final sem causar estragos adicionais, é como ter um sistema de freios ABS, airbags e um computador de bordo completo no carro; as configurações pré-definidas em `PERCENTUAIS` e `OTIMIZACOES` aplicam as melhores práticas de forma consistente e automática, garantindo que cada parte do sistema receba o tratamento adequado desde o início, como ter um engenheiro definindo as especificações exatas para cada componente da construção, assegurando máxima eficiência e durabilidade desde a fundação, resultando em um processo mais seguro, resiliente e otimizado desde a base.
-
-### Tabela de Explicação: Preparação e Controle
-
-| **Característica**     | **Método Tradicional**                   | **Meu Método (Script)**                            |
-| ---------------------- | ---------------------------------------- | -------------------------------------------------- |
-| **Controle de Erros**  | Rudimentar ou inexistente                | Robusto (`set -euo pipefail`, `trap`)              |
-| **Repetição de Ações** | Risco de executar etapas destrutivas     | Impedida (`ja_executado`, `marcar_como_executado`) |
-| **Rastreabilidade**    | Difícil, sem logs padronizados           | Fácil (`LOG_FILE`, `CONTROL_FILE`)                 |
-| **Configurações**      | Padrões genéricos, muitas vezes manuais  | Otimizadas e automatizadas (`OTIMIZACOES`)         |
-| **Flexibilidade**      | Menor, difícil adaptar partições         | Alta com LVM e percentuais (`PERCENTUAIS`)         |
-| **Segurança**          | Menor, mais propenso a falhas em cascata | Maior, para ao primeiro erro grave                 |
+trap 'echo "Erro na linha $LINENO" | tee -a "$LOG_FILE" >&2; exit 1' ERR
+```
 
 ***
 
