@@ -28,22 +28,6 @@
 # ║                                                                              ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 # PS: para pessoa me copiar, vai ter que explicar pq o nome da função de estabilização harmonica de processamento com base num vetor comum de função para reduzir o framerate tempo_dimensional no modelo Bayesiano se chama "faz_o_urro()" 
-set -euo pipefail
-
-# ----------------------------------------
-# 📝 ARQUIVOS DE LOG E CONTROLE
-# ----------------------------------------
-LOG_DIR="/log"
-LOG_FILE="$LOG_DIR/vemCaPutinha.log"
-CONTROL_FILE="$LOG_DIR/vemCaPutinha_control.log"
-mkdir -p "$LOG_DIR"
-touch "$LOG_FILE" "$CONTROL_FILE"
-
-# ----------------------------------------
-# 🚨 TRAP DE ERROS
-# ----------------------------------------
-trap 'echo "Erro na linha $LINENO" | tee -a "$LOG_FILE" >&2; exit 1' ERR
-
 # ----------------------------------------
 # 🖋️ FUNÇÕES DE UI E CONTROLE
 # ----------------------------------------
@@ -55,84 +39,43 @@ d_l() {
     done
     echo
 }
-
-confirmar_execucao() {
-    local acao="$1"
-    d_l "$acao"
-    read -p "Deseja aplicar esta configuração? [s/N]: " resp
-    [[ "$resp" =~ ^[sS]$ ]]
-}
-
-ja_executado() {
-    grep -qFx "$1" "$CONTROL_FILE" 2>/dev/null
-}
-
-marcar_como_executado() {
-    echo "$1" >> "$CONTROL_FILE"
-}
-
 # ----------------------------------------
 # 📍 FUNÇÃO: OBTER UUIDs E USUÁRIO
 # ----------------------------------------
-get_uuids_and_user() {
-    d_l "Coletando UUIDs e usuário..."
-    UUID_SYSTEM=$(blkid -s UUID -o value "$(findmnt -n -o SOURCE /)")
-    UUID_BOOT=$(blkid -s UUID -o value "$(findmnt -n -o SOURCE /boot/efi)")
-    if mountpoint -q /home; then
-        UUID_HOME=$(blkid -s UUID -o value "$(findmnt -n -o SOURCE /home)")
-    else
-        UUID_HOME=""
-    fi
-    USERNAME="${SUDO_USER:-$(whoami)}"
-    d_l "Usuário: $USERNAME"
+# 📄 Script para gerar fstab otimizado (sem LVM)
+# Autor: pmota | Revisado por ChatGPT
+# Função para pegar UUID de um dispositivo
+get_uuid() {
+    blkid -s UUID -o value "$1"
 }
 
-# ----------------------------------------
-# 📝 FUNÇÃO: CONFIGURAR /etc/fstab
-# ----------------------------------------
-configurar_fstab() {
-    local tag="configurar_fstab"
-    if ja_executado "$tag"; then
-        d_l ">>> configurar_fstab já executado, pulando."
-        return
-    fi
+# Gerar o conteúdo do fstab
+gerar_fstab() {
+    dl ">> Gerando fstab em $FSTAB_PATH..."
 
-    d_l "Gerando /etc/fstab com otimizações..."
-    cat <<EOF > /etc/fstab
-UUID=$UUID_SYSTEM  /               btrfs   defaults,noatime,compress=zstd:3,autodefrag,space_cache=v2 0 1
-UUID=$UUID_BOOT    /boot/efi       vfat    umask=0077 0 1
+    mkdir -p "$(dirname "$FSTAB_PATH")"
+
+    cat <<EOF > "$FSTAB_PATH"
+# /etc/fstab - Gerado automaticamente
+
+UUID=$(get_uuid ${DISK}3)   /               ext4    defaults,noatime,discard,commit=60,errors=remount-ro  0 1
+UUID=$(get_uuid ${DISK}1)   /boot/efi       vfat    defaults,noatime,uid=0,gid=0,umask=0077,shortname=winnt  0 1
+UUID=$(get_uuid ${DISK}2)   /boot           ext4    defaults,noatime,errors=remount-ro  0 1
+UUID=$(get_uuid ${DISK}8)   /home           xfs     defaults,noatime,allocsize=512m,logbufs=8,inode64  0 2
+UUID=$(get_uuid ${DISK}6)   /usr            ext4    ro,noatime,errors=remount-ro,commit=120  0 1
+UUID=$(get_uuid ${DISK}4)   /var            ext4    defaults,noatime,data=journal,commit=30  0 2
+UUID=$(get_uuid ${DISK}5)   /tmp            ext4    defaults,noatime,nosuid,nodev  0 2
+UUID=$(get_uuid ${DISK}7)   none            swap    sw  0 0
+
+tmpfs             /working        tmpfs   defaults,size=4G,noatime,nodev,nosuid,mode=1777  0 0
+tmpfs             /sensory/tmp    tmpfs   defaults,size=2G,noatime,nodev,nosuid,mode=1777  0 0
+tmpfs             /dev/shm        tmpfs   defaults,size=8G,noatime,nodev,nosuid,mode=1777  0 0
+
+/cognitive/cerebellum/.config /home/$USER_NAME/.config none bind 0 0
 EOF
 
-    if [[ -n "$UUID_HOME" ]]; then
-        cat <<EOF >> /etc/fstab
-UUID=$UUID_HOME    /home           xfs     defaults,noatime,largeio,inode64 0 2
-EOF
-    fi
-
-    cat <<EOF >> /etc/fstab
-
-tmpfs             /working        tmpfs   defaults,size=4G,noatime,nodev,nosuid,mode=1777 0 0
-tmpfs             /sensory/tmp    tmpfs   defaults,size=2G,noatime,nodev,nosuid,mode=1777 0 0
-tmpfs             /dev/shm        tmpfs   defaults,size=8G,noatime,nodev,nosuid,mode=1777 0 0
-
-/cognitive/cerebellum/.config /home/$USERNAME/.config none bind 0 0
-EOF
-
-    marcar_como_executado "$tag"
-    d_l "/etc/fstab configurado com sucesso."
+    dl "✅ fstab gerado com sucesso!"
 }
 
-# ----------------------------------------
-# 🧠 FUNÇÃO PRINCIPAL
-# ----------------------------------------
-main_postinstall() {
-    if ! confirmar_execucao "Isto vai sobrescrever /etc/fstab atual"; then
-        d_l "Operação cancelada pelo usuário."
-        exit 0
-    fi
-    get_uuids_and_user
-    configurar_fstab
-    d_l "Post‑install concluído: fstab pronto para montagem otimizada."
-}
-
-main_postinstall
+# Execução
+gerar_fstab
