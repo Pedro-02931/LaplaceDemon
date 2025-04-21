@@ -92,14 +92,14 @@ PERCENTUAIS[home]=$((100 - TOTAL_PCT))
 PERCENTUAIS[swap]=5
 
 declare -A OTIMIZACOES=(
-    ["EFI"]="vfat \"-F32 -n EFI\" \"\" noatime,nodiratime,flush"
-    ["BOOT"]="ext4 \"-q -L BOOT\" \"\" data=writeback,noatime,discard"
-    ["root"]="btrfs \"-L ROOT -f\" \"\" compress=zstd:3,noatime,space_cache=v2,ssd,autodefrag"
-    ["var"]="ext4 \"-q -L VAR\" \"-o journal_data_writeback\" data=journal,barrier=0"
-    ["tmp"]="ext4 \"-q -L TMP\" \"\" noatime,nodiratime,nodev,nosuid,noexec,discard"
-    ["usr"]="ext4 \"-q -L USR\" \"\" noatime,nodiratime,discard,commit=120"
-    ["home"]="btrfs \"-L HOME -f\" \"\" compress=zstd:1,autodefrag,noatime,space_cache=v2,ssd"
-    ["swap"]="swap \"-L SWAP\" \"\" discard,pri=100"
+    ["EFI"]="vfat \"-F32 -n EFI\" \"\""
+    ["BOOT"]="ext4 \"-q -L BOOT\" \"\""
+    ["root"]="btrfs \"-L ROOT -f\" \"\""
+    ["var"]="ext4 \"-q -L VAR\" \"-o journal_data_writeback\""
+    ["tmp"]="ext4 \"-q -L TMP\" \"\""
+    ["usr"]="ext4 \"-q -L USR\" \"\""
+    ["home"]="btrfs \"-L HOME -f\" \"\""
+    ["swap"]="swap \"-L SWAP\" \"\""
 )
 
 # ----------------------------------------
@@ -169,38 +169,34 @@ formatar_e_otimizar() {
         d_l ">>> formatar_e_otimizar já executado, pulando."
         return
     fi
-    
+
     # EFI e BOOT
     for key in EFI BOOT; do
-        IFS=' ' read -r fs mkfs_opts tune_opts mount_opts <<< "${OTIMIZACOES[$key]}"
+        IFS=' ' read -r fs mkfs_opts tune_opts <<< "${OTIMIZACOES[$key]}"
         part="${DISK}$([[ "$key" == "EFI" ]] && echo "1" || echo "2")"
         d_l "Formatando $key ($part) como $fs..."
         eval mkfs.$fs $mkfs_opts "$part"
         [[ -n $tune_opts ]] && eval tune2fs $tune_opts "$part"
-        mkdir -p "$MOUNTROOT/$([[ "$key" == "EFI" ]] && echo "boot/efi" || echo "boot")"
-        mount -o "$mount_opts" "$part" "$MOUNTROOT/$([[ "$key" == "EFI" ]] && echo "boot/efi" || echo "boot")"
     done
-    
+
     # Partições diretas
     local idx=3
     local p=("root" "var" "tmp" "usr" "swap" "home")
     for part in "${p[@]}"; do
+        dev="${DISK}${idx}"
         if [[ "$part" == "swap" ]]; then
-            d_l "Configurando swap em ${DISK}${idx}..."
-            mkswap -L SWAP "${DISK}${idx}"
-            swapon "${DISK}${idx}"
+            d_l "Configurando swap em $dev..."
+            mkswap -L SWAP "$dev"
+            swapon "$dev"
         else
-            IFS=' ' read -r fs mkfs_opts tune_opts mount_opts <<< "${OTIMIZACOES[$part]}"
-            dev="${DISK}${idx}"
+            IFS=' ' read -r fs mkfs_opts tune_opts <<< "${OTIMIZACOES[$part]}"
             d_l "Formatando partição $part ($dev) como $fs..."
             eval mkfs.$fs $mkfs_opts "$dev"
             [[ -n $tune_opts ]] && eval tune2fs $tune_opts "$dev"
-            mkdir -p "$MOUNTROOT/$part"
-            mount -o "$mount_opts" "$dev" "$MOUNTROOT/$part"
         fi
         ((idx++))
     done
-    
+
     marcar_como_executado "$tag"
     d_l "Formatação e otimizações aplicadas."
 }
@@ -214,11 +210,10 @@ main() {
         d_l "Operação cancelada pelo usuário."
         exit 0
     fi
-    
-    # Calcular tamanho total do disco para particionamento
+
     DISK_SIZE_BYTES=$(blockdev --getsize64 "$DISK")
-    VG_SIZE_MB=$((DISK_SIZE_BYTES / 1024 / 1024 - 1536)) # Subtrair espaço para EFI e BOOT
-    
+    VG_SIZE_MB=$((DISK_SIZE_BYTES / 1024 / 1024 - 1536)) # espaço EFI + BOOT
+
     preparar_disco
     formatar_e_otimizar
     d_l "Processo concluído: +20-40% de vida útil do SSD, +15-30% de I/O, sincronia CPU/SSD atingida."
