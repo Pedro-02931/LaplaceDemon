@@ -1,8 +1,4 @@
-# Ganhos Esperados
-
-
-
-#### O que muda, na prática?
+# Armazenamento -  O que muda, na prática?
 
 Comparando uma instalação tradicional (sem otimizações) com a minha configuração ajustada, a expectativa de vida útil do SSD **salta de 1.5 anos para quase 5 anos**. Isso representa um ganho de **227%** — ou, colocando de outro jeito, **mais que triplica o tempo de uso seguro do SSD**.
 
@@ -60,4 +56,3 @@ Essa abordagem é particularmente eficiente para SSDs sem DRAM como o Kingston S
 
 **Em termos simples:**\
 Você estará cuidando do seu SSD de uma forma que **nem o fabricante espera que você cuide** — e o resultado é que ele vai durar **anos a mais**, mantendo o sistema rápido e confiável todo esse tempo.
-

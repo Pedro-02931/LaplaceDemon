@@ -37,6 +37,7 @@
 ## Vem ca Putinha
 
 * [Ganhos Esperados](vem-ca-putinha/ganhos-esperados.md)
-  * [Armazenamento](vem-ca-putinha/ganhos-esperados/armazenamento/README.md)
-    * [Comparação com a Formatação Tradicional: Vantagens Reais da Configuração Otimizada](vem-ca-putinha/ganhos-esperados/armazenamento/comparacao-com-a-formatacao-tradicional-vantagens-reais-da-configuracao-otimizada.md)
-    * [Glossário Técnico Explicado](vem-ca-putinha/ganhos-esperados/armazenamento/glossario-tecnico-explicado.md)
+  * [Armazenamento -  O que muda, na prática?](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/README.md)
+    * [Comparação com a Formatação Tradicional: Vantagens Reais da Configuração Otimizada](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/comparacao-com-a-formatacao-tradicional-vantagens-reais-da-configuracao-otimizada.md)
+    * [Glossário Técnico Explicado](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/glossario-tecnico-explicado.md)
+    * [Blá Blá Blá tecnico](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/bla-bla-bla-tecnico.md)
