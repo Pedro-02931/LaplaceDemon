@@ -26,8 +26,8 @@
     * [Formatar E Aplicar Otimizações](concepcao/setup-inicial/livecd-e-kernel-panics/formatar-e-aplicar-otimizacoes/README.md)
       * [Tradicional x Minha Proposta](concepcao/setup-inicial/livecd-e-kernel-panics/formatar-e-aplicar-otimizacoes/tradicional-x-minha-proposta.md)
       * [Glossario Tecnico Explicado](concepcao/setup-inicial/livecd-e-kernel-panics/formatar-e-aplicar-otimizacoes/glossario-tecnico-explicado.md)
-  * [SO](concepcao/setup-inicial/so/README.md)
-    * [FS](concepcao/setup-inicial/so/fs.md)
+  * [Sistema Operacional](concepcao/setup-inicial/sistema-operacional/README.md)
+    * [Criando /etc/fstab](concepcao/setup-inicial/sistema-operacional/criando-etc-fstab.md)
 
 ## Automação
 
