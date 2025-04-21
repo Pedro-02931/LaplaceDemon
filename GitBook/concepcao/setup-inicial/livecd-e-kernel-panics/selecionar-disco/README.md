@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Selecionar Disco
 
 Esta função é crucial para garantir que a formatação ocorra no lugar certo, evitando a catástrofe de apagar o disco errado, em que o comando `lsblk -dpno NAME,SIZE,MODEL` lista todos os dispositivos de bloco (discos, partições) de forma clara, mostrando o nome completo do dispositivo (`/dev/sda`, `/dev/nvme0n1`), tamanho e modelo, facilitando a identificação visual.&#x20;

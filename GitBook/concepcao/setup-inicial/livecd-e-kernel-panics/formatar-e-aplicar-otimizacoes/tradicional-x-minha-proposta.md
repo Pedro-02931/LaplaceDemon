@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Tradicional x Minha Proposta
 
 ## Ganhos em Relação Entre o Método Tradicional e o Meu

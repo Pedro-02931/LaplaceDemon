@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Tradicional x Minha Proposta
 
 O método tradicional muitas vezes se limita a usar ferramentas de particionamento que apenas recriam a tabela de partição, sem garantir a limpeza completa de metadados antigos ou bootloaders que podem causar conflitos ou comportamentos inesperados mais tarde, pelo menos foi isso q passei ao usar o calamaris.

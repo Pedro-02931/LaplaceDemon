@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Glossario Tecnico Explicado
 
 | Comando/Flag        | Explicação Lógica                                                  | Explicação Eletrônica                                                    | Acrônimo / Significado Técnico        |

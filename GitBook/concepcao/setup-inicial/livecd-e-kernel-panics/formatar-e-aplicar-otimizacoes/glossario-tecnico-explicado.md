@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Glossario Tecnico Explicado
 
 | Item / Comando | Explicação Lógica                                                                | Explicação Eletrônica / Kernel                                                            | Acrônimo / Significado Técnico     |

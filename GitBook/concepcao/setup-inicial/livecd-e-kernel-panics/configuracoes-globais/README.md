@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Configurações Globais
 
 Aqui foi onde o meu script brilha, que foi a implementação de um conceito que inventei na base da gambiarra que é a memoria cruzada, em que através da criação de um valor discriminante na chave, consigo carregar palavras chaves de colapsos, e através de laços for loop, consigo executar compressão entrópica.

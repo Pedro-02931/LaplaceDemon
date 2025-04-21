@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Glossario Tecnico Explicado
 
 | Comando              | Nível Lógico                                                        | Nível Eletrônico                                                     | Acrônimo / Significado técnico                       |

@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Formatar E Aplicar Otimizações
 
 Este é o clímax, onde aplicamos as configurações finas que realmente fazem a diferença no dia a dia, aqui pegamos as estruturas criadas (partições físicas EFI/BOOT e LVs) e damos vida a elas com sistemas de arquivos específicos e opções de montagem otimizadas.

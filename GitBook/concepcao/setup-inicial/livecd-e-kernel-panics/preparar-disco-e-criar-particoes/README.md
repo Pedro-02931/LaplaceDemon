@@ -1,3 +1,9 @@
+---
+description: >-
+  Protegido pela GPL2 - Linkedin:
+  https://www.linkedin.com/in/pedro-mota-95046b356/
+---
+
 # Preparar Disco E Criar Partições
 
 Primeiro essa função verifica se já foi executada para evitar refazer a limpeza e particionamento, garantindo a segurança; em seguida, executa uma série de comandos de "desmonte":
