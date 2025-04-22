@@ -194,16 +194,45 @@ ajustar_swappiness() {
 }
 
 main() {
-    local chave="${1:-050}"  # Exemplo: passe a chave por parâmetro
     check_dependencies
-    get_system_status "$chave"
-    IFS=' ' read -r cpu_gov perf disk_apm usb_suspend radio_pol cores _ epb zram_pct zram_alg zram_str swappiness vram pwr boost <<< "${HOLISTIC_POLICIES[$chave]}"
-    governor_apply "$cpu_gov"
-    gpu_dpm "$perf" "$vram" "$pwr" "$boost"
-    zram_opt "$zram_pct" "$zram_alg" "$zram_str"
-    energy_opt "$chave" "$epb"
-    ajustar_swappiness "$swappiness"
+    echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') Iniciando monitoramento automático (colapso habilitado)…"
+
+    local CURRENT_KEY=""
+
+    while true; do
+        for key in "${!HOLISTIC_POLICIES[@]}"; do
+            get_system_status "$key"
+            if (( $? == 1 )); then
+                if [[ "$key" != "$CURRENT_KEY" ]]; then
+                    IFS=' ' read -r cpu_gov perf disk_apm usb_suspend radio_pol cores _ \
+                                     epb zram_pct zram_alg zram_str swappiness \
+                                     vram pwr boost \
+                        <<< "${HOLISTIC_POLICIES[$key]}"
+
+                    # imprime no terminal todas as mudanças de uma vez
+                    echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') Aplicando perfil $key (antes: ${CURRENT_KEY:-nenhum}):"
+                    echo "       CPU governor=$cpu_gov | GPU perf=$perf freq=${vram}MHz TDP=${pwr}W boost=${boost}MHz"
+                    echo "       ZRAM=${zram_pct}% alg=${zram_alg} streams=${zram_str} | Swappiness=$swappiness | EPB=$epb | Cores=$cores"
+
+                    governor_apply      "$cpu_gov"
+                    gpu_dpm             "$perf" "$vram" "$pwr" "$boost"
+                    zram_opt            "$zram_pct" "$zram_alg" "$zram_str"
+                    energy_opt          "$key" "$epb"
+                    ajustar_swappiness  "$swappiness"
+
+                    CURRENT_KEY="$key"
+                else
+                    echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') Perfil $key já ativo; nenhuma alteração necessária"
+                fi
+                break
+            fi
+        done
+        sleep 30
+    done
 }
+
+main "$@"
+
 
 main "$@"
 
