@@ -41,7 +41,50 @@ check_dependencies() {
 }
 
 get_system_status() {
-    CPU_TEMP=$(sensors -u coretemp-isa-0 2>/dev/null | awk '/input/ {sum+=$2; cnt++} END {printf "%d", (cnt>0)?sum/cnt:40}')
+    # Harmonic FIFO window parameters
+    cores=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo 1)
+    HARMONIC_N=$cores
+    if [ $HARMONIC_N -lt 3 ]; then
+        HARMONIC_N=3
+    elif [ $HARMONIC_N -gt 10 ]; then
+        HARMONIC_N=10
+    fi
+
+    STATE_FILE="/var/vemCaPutinha.harmonic.CPU.state"
+    LOG_FILE="/var/vemCaPutinha.harmonic.CPU.log"
+
+    # 1. Captura a leitura atual de CPU
+    CUR_TEMP=$(sensors -u coretemp-isa-0 2>/dev/null \
+               | awk '/input/ {sum+=$2; cnt++} END {printf "%d", (cnt>0)?sum/cnt:0}')
+
+    # 2. Lê histórico anterior (se existir)
+    if [[ -f "$STATE_FILE" ]]; then
+        mapfile -t measures < "$STATE_FILE"
+    else
+        measures=()
+    fi
+
+    # 3. Insere a leitura atual e mantém apenas as últimas HARMONIC_N
+    measures+=("$CUR_TEMP")
+    if ((${#measures[@]} > HARMONIC_N)); then
+        measures=("${measures[@]: -HARMONIC_N}")
+    fi
+
+    # 4. Calcula média e máximo da fila
+    sum=0; max=${measures[0]:-0}
+    for v in "${measures[@]}"; do
+        (( sum += v ))
+        (( v > max )) && max=$v
+    done
+    avg=$(( sum / ${#measures[@]} ))
+
+    # 5. Atualiza arquivo de estado e log
+    printf "%s\n" "${measures[@]}" > "$STATE_FILE"
+    echo "[HARMONIC_MAX] $(date '+%Y-%m-%d %H:%M:%S') $max" >> "$LOG_FILE"
+
+    # 6. Seta CPU_TEMP para o valor médio
+    CPU_TEMP=$avg
+
     if [[ -f /sys/class/power_supply/AC/online ]]; then
         POWER_STATE=$( (grep -q 1 /sys/class/power_supply/AC/online && echo "AC") || echo "BAT" )
     else
