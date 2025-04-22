@@ -32,6 +32,8 @@ check_dependencies() {
     command -v tlp >/dev/null || missing+=("tlp")
     command -v sensors >/dev/null || missing+=("lm-sensors")
     command -v stress-ng >/dev/null || missing+=("stress-ng")
+    command -v rdmsr >/dev/null || missing+=("msr-tools")
+    command -v wrmsr >/dev/null || missing+=("msr-tools")
     if [ ${#missing[@]} -gt 0 ]; then
         warn "Dependências faltando: ${missing[*]}"
         apt-get update && apt-get install -y "${missing[@]}" || error "Falha na instalação"
@@ -41,7 +43,6 @@ check_dependencies() {
 }
 
 get_system_status() {
-    # Harmonic FIFO window parameters
     cores=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo 1)
     HARMONIC_N=$cores
     if [ $HARMONIC_N -lt 3 ]; then
@@ -53,24 +54,20 @@ get_system_status() {
     STATE_FILE="/var/vemCaPutinha.harmonic.CPU.state"
     LOG_FILE="/var/vemCaPutinha.harmonic.CPU.log"
 
-    # 1. Captura a leitura atual de CPU
     CUR_TEMP=$(sensors -u coretemp-isa-0 2>/dev/null \
                | awk '/input/ {sum+=$2; cnt++} END {printf "%d", (cnt>0)?sum/cnt:0}')
 
-    # 2. Lê histórico anterior (se existir)
     if [[ -f "$STATE_FILE" ]]; then
         mapfile -t measures < "$STATE_FILE"
     else
         measures=()
     fi
 
-    # 3. Insere a leitura atual e mantém apenas as últimas HARMONIC_N
     measures+=("$CUR_TEMP")
     if ((${#measures[@]} > HARMONIC_N)); then
         measures=("${measures[@]: -HARMONIC_N}")
     fi
 
-    # 4. Calcula média e máximo da fila
     sum=0; max=${measures[0]:-0}
     for v in "${measures[@]}"; do
         (( sum += v ))
@@ -78,11 +75,9 @@ get_system_status() {
     done
     avg=$(( sum / ${#measures[@]} ))
 
-    # 5. Atualiza arquivo de estado e log
     printf "%s\n" "${measures[@]}" > "$STATE_FILE"
     echo "[HARMONIC_MAX] $(date '+%Y-%m-%d %H:%M:%S') $max" >> "$LOG_FILE"
 
-    # 6. Seta CPU_TEMP para o valor médio
     CPU_TEMP=$avg
 
     if [[ -f /sys/class/power_supply/AC/online ]]; then
@@ -94,6 +89,9 @@ get_system_status() {
     fi
     CPU_MAX_TEMP=$(sensors -u coretemp-isa-0 2>/dev/null | awk '/temp1_max/ {temp=$2} END {printf "%d", (temp+0)?temp:95}')
     BAT_CAPACITY=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1 || echo "100")
+
+    LOGICAL_CORES=$(nproc --all)
+    PHYSICAL_CORES=$(lscpu | awk '/^Core\(s\) per socket:/ {cps=$4} /^Socket\(s\):/ {sks=$2} END {print cps * sks}')
 }
 
 radio_control() {
@@ -105,11 +103,41 @@ radio_control() {
     esac
 }
 
+safe_core_control() {
+    local desired=$1
+
+    case $desired in
+        min) desired=1 ;;
+        half) desired=$((PHYSICAL_CORES / 2)) ;;
+        logical) desired=$LOGICAL_CORES ;;
+        max) desired=$PHYSICAL_CORES ;;
+    esac
+
+    desired=$((desired < 1 ? 1 : desired))
+    total=$(nproc --all)
+
+    for (( i=0; i<total; i++ )); do
+        [[ -f /sys/devices/system/cpu/cpu$i/online ]] || continue
+        current=$(< /sys/devices/system/cpu/cpu$i/online)
+        if (( i < desired && current == 0 )); then
+            echo 1 > /sys/devices/system/cpu/cpu$i/online
+        elif (( i >= desired && current == 1 )); then
+            echo 0 > /sys/devices/system/cpu/cpu$i/online
+        fi
+    done
+}
+
+apply_energy_bias() {
+    local epb=$1
+    local current=$(rdmsr -r 0x1b0 2>/dev/null | awk '{ printf "%02X", $1 }') || return
+    [[ "$current" != "$epb" ]] && wrmsr -a 0x1b0 $((16#$epb)) 2>/dev/null || true
+}
+
 declare -A ENERGY_PROFILES=(
-    ["35"]="powersave battery 128 1 off"
-    ["55"]="ondemand balanced 192 0 low"
-    ["75"]="performance performance 254 0 high"
-    ["90"]="performance performance 254 0 off"
+    ["35"]="powersave battery 128 1 off min 0A"
+    ["55"]="ondemand balanced 192 0 low half 0A"
+    ["75"]="performance performance 254 0 high logical 08"
+    ["90"]="performance performance 254 0 off max 06"
 )
 
 check_collapse() {
@@ -124,19 +152,22 @@ check_collapse() {
 
 apply_energy_profile() {
     local threshold=$1
-    IFS=" " read -r cpu_gov gpu_mode disk_apm usb_suspend radio_pol <<< "${ENERGY_PROFILES[$threshold]}"
+    IFS=" " read -r cpu_gov gpu_mode disk_apm usb_suspend radio_pol active_cores epb <<< "${ENERGY_PROFILES[$threshold]}"
     if check_collapse "$cpu_gov" "$gpu_mode" "$disk_apm" "$usb_suspend" "$radio_pol"; then
         log "Colapso de estado: Configuração $threshold% já ativa → mantida"
         return 0
     fi
     log "Aplicando Perfil ${threshold}% TjMax:"
-    log "→ CPU: $cpu_gov | GPU: $gpu_mode | Disco: $disk_apm | USB: $usb_suspend | Rádio: $radio_pol"
+    log "→ CPU: $cpu_gov | GPU: $gpu_mode | Disco: $disk_apm | USB: $usb_suspend | Rádio: $radio_pol | Núcleos: $active_cores | EPB: $epb"
     if [[ "$POWER_STATE" == "AC" ]]; then
         tlp ac --CPU_SCALING_GOVERNOR_ON_AC="$cpu_gov" --RADEON_DPM_STATE_ON_AC="$gpu_mode" --SATA_LINKPWR_ON_AC="max_performance" --USB_AUTOSUSPEND="$usb_suspend"
     else
         tlp bat --CPU_SCALING_GOVERNOR_ON_BAT="$cpu_gov" --RADEON_DPM_STATE_ON_BAT="$gpu_mode" --SATA_LINKPWR_ON_BAT="$disk_apm" --USB_AUTOSUSPEND="$usb_suspend" --CPU_MIN_PERF_ON_BAT=$((BAT_CAPACITY > 20 ? BAT_CAPACITY/2 : 10)) --CPU_MAX_PERF_ON_BAT=$BAT_CAPACITY
     fi
     radio_control "$radio_pol"
+    safe_core_control 0 && sleep 0.5
+    safe_core_control "$active_cores"
+    apply_energy_bias "$epb"
     tlp start >/dev/null
     return 1
 }
@@ -161,6 +192,7 @@ main() {
 }
 
 main
+
 EOF
 
 chmod +x "$SCRIPT_PATH"
