@@ -32,7 +32,8 @@
 
 ## Automação
 
-* [Page 1](automacao/page-1.md)
+* [Alma](automacao/alma/README.md)
+  * [Memoria de Cruzamento e Tomada de Decisão](automacao/alma/memoria-de-cruzamento-e-tomada-de-decisao.md)
 
 ## Vem ca Putinha
 
