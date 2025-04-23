@@ -1,4 +1,4 @@
-# Minha ideia: Suavizando a Realidade com Média Móvel
+# Suavizando a Realidade com Média Móvel
 
 A função `faz_o_urro` é crucial para evitar que o sistema tenha reações espasmódicas a cada pequena flutuação no uso da CPU, ela implementa uma Média Móvel Exponencial (EMA), que é uma forma inteligente de calcular uma média que dá mais peso aos dados mais recentes sem descartar completamente o histórico passado, agindo como um filtro passa-baixa que suaviza os picos e vales momentâneos.&#x20;
 
