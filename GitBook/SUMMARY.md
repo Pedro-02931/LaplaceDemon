@@ -36,6 +36,7 @@
   * [Memoria de Cruzamento e Tomada de Decisão](automacao/alma/memoria-de-cruzamento-e-tomada-de-decisao.md)
     * [Blá Blá Blá](automacao/alma/memoria-de-cruzamento-e-tomada-de-decisao/bla-bla-bla.md)
     * [Ganhos em relação entre o método tradicional e o meu](automacao/alma/memoria-de-cruzamento-e-tomada-de-decisao/ganhos-em-relacao-entre-o-metodo-tradicional-e-o-meu.md)
+    * [Termos Tecnicos](automacao/alma/memoria-de-cruzamento-e-tomada-de-decisao/termos-tecnicos.md)
   * [Suavizando a Realidade com Média Móvel](automacao/alma/suavizando-a-realidade-com-media-movel/README.md)
     * [Blá Blá Blá](automacao/alma/suavizando-a-realidade-com-media-movel/bla-bla-bla.md)
     * [Ganhos em relação entre o método tradicional e o meu](automacao/alma/suavizando-a-realidade-com-media-movel/ganhos-em-relacao-entre-o-metodo-tradicional-e-o-meu.md)
