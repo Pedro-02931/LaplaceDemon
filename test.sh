@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HISTORY_FILE="/tmp/urro_history"
-MAX_HISTORY=5
+MAX_HISTORY=10
 CURRENT_POLICY_KEY=""
 
 declare -A SAFE_LIMITS=( [CPU_TEMP]=85000 )
@@ -18,19 +18,19 @@ load_intel_specs() {
 }
 
 load_intel_specs
-
 declare -A HOLISTIC_POLICIES=(
-    ["000"]="powersave   battery   $((MAX_TDP * 20 / 100)) $((MAX_TDP * 15 / 100)) $((MAX_GPU_CLOCK * 30 / 100)) zstd $((CORES_TOTAL * 25 / 100)) 10"
-    ["010"]="powersave   battery   $((MAX_TDP * 25 / 100)) $((MAX_TDP * 18 / 100)) $((MAX_GPU_CLOCK * 35 / 100)) zstd $((CORES_TOTAL * 30 / 100)) 15"
-    ["020"]="powersave   battery   $((MAX_TDP * 30 / 100)) $((MAX_TDP * 20 / 100)) $((MAX_GPU_CLOCK * 40 / 100)) lz4  $((CORES_TOTAL * 40 / 100)) 20"
-    ["030"]="powersave   balanced $((MAX_TDP * 35 / 100)) $((MAX_TDP * 22 / 100)) $((MAX_GPU_CLOCK * 45 / 100)) lz4  $((CORES_TOTAL * 50 / 100)) 25"
-    ["040"]="ondemand    balanced $((MAX_TDP * 40 / 100)) $((MAX_TDP * 25 / 100)) $((MAX_GPU_CLOCK * 50 / 100)) lzo  $((CORES_TOTAL * 60 / 100)) 30"
-    ["050"]="conservative balanced $((MAX_TDP * 50 / 100)) $((MAX_TDP * 30 / 100)) $((MAX_GPU_CLOCK * 60 / 100)) lz4  $((CORES_TOTAL * 70 / 100)) 35"
-    ["060"]="conservative balanced $((MAX_TDP * 60 / 100)) $((MAX_TDP * 35 / 100)) $((MAX_GPU_CLOCK * 70 / 100)) lzo  $((CORES_TOTAL * 80 / 100)) 40"
-    ["070"]="performance performance $((MAX_TDP * 70 / 100)) $((MAX_TDP * 40 / 100)) $((MAX_GPU_CLOCK * 80 / 100)) zstd $((CORES_TOTAL * 90 / 100)) 50"
-    ["080"]="performance performance $((MAX_TDP * 90 / 100)) $((MAX_TDP * 50 / 100)) $((MAX_GPU_CLOCK * 90 / 100)) lz4  $((CORES_TOTAL)) 55"
-    ["090"]="performance performance $((MAX_TDP * 95 / 100)) $((MAX_TDP * 55 / 100)) $((MAX_GPU_CLOCK * 95 / 100)) lz4  $((CORES_TOTAL)) 60"
-    ["100"]="performance performance $((MAX_TDP))           $((MAX_TDP))           $((MAX_GPU_CLOCK))           zstd $((CORES_TOTAL)) 65"
+    # Formato: "CPU Gov | Power Limit (%TDP) | TDP Limit (%TDP) | GPU Clock (%GPU_MAX) | | Algoritmo ZRAM | Streams | Swappiness"
+    ["000"]="ondemand    $((MAX_TDP * 20 / 100)) $((MAX_TDP * 15 / 100)) $((MAX_GPU_CLOCK * 30 / 100)) zstd $((CORES_TOTAL * 25 / 100)) 10"
+    ["010"]="ondemand    $((MAX_TDP * 25 / 100)) $((MAX_TDP * 18 / 100)) $((MAX_GPU_CLOCK * 35 / 100)) zstd $((CORES_TOTAL * 30 / 100)) 15"
+    ["020"]="ondemand    $((MAX_TDP * 30 / 100)) $((MAX_TDP * 20 / 100)) $((MAX_GPU_CLOCK * 40 / 100)) lz4  $((CORES_TOTAL * 40 / 100)) 20"
+    ["030"]="ondemand    $((MAX_TDP * 35 / 100)) $((MAX_TDP * 22 / 100)) $((MAX_GPU_CLOCK * 45 / 100)) lz4  $((CORES_TOTAL * 50 / 100)) 25"
+    ["040"]="ondemand    $((MAX_TDP * 40 / 100)) $((MAX_TDP * 25 / 100)) $((MAX_GPU_CLOCK * 50 / 100)) lzo  $((CORES_TOTAL * 60 / 100)) 30"
+    ["050"]="userspace   $((MAX_TDP * 50 / 100)) $((MAX_TDP * 30 / 100)) $((MAX_GPU_CLOCK * 60 / 100)) lz4  $((CORES_TOTAL * 70 / 100)) 35"
+    ["060"]="userspace   $((MAX_TDP * 60 / 100)) $((MAX_TDP * 35 / 100)) $((MAX_GPU_CLOCK * 70 / 100)) lzo  $((CORES_TOTAL * 80 / 100)) 40"
+    ["070"]="performance $((MAX_TDP * 70 / 100)) $((MAX_TDP * 40 / 100)) $((MAX_GPU_CLOCK * 80 / 100)) zstd $((CORES_TOTAL * 90 / 100)) 50"
+    ["080"]="performance $((MAX_TDP * 90 / 100)) $((MAX_TDP * 50 / 100)) $((MAX_GPU_CLOCK * 90 / 100)) lz4  $((CORES_TOTAL)) 55"
+    ["090"]="performance $((MAX_TDP * 95 / 100)) $((MAX_TDP * 55 / 100)) $((MAX_GPU_CLOCK * 95 / 100)) lz4  $((CORES_TOTAL)) 60"
+    ["100"]="performance $((MAX_TDP))           $((MAX_TDP))           $((MAX_GPU_CLOCK))           zstd $((CORES_TOTAL)) 65"
 )
 
 get_cpu_usage() {
@@ -77,35 +77,29 @@ update_history_and_get_avg() {
 }
 
 determine_policy_key() {
-    local usage avg key lower upper
+    local usage avg key
 
     usage=$(get_cpu_usage)
     avg=$(update_history_and_get_avg "$usage")
 
-    lower=$(printf "%03d" $((avg / 10 * 10)))
-    upper=$(printf "%03d" $(((avg + 9) / 10 * 10)))
-
-    if (( 10#$avg - 10#$lower <= 10#$upper - 10#$avg )); then
-        key="$lower"
-    else
-        key="$upper"
-    fi
+    key=$(printf "%03d" $((avg / 10 * 10)))
 
     if [[ -v HOLISTIC_POLICIES["$key"] ]]; then
-        echo "$key"
+        echo "$key|$avg"
     else
-        echo "🟡 Chave $key não encontrada. Usando fallback padrão."
-        echo "000"
+        echo "000|$avg"
     fi
 }
 
 echo "🚀 Iniciando motor de cruzamento bayesiano..."
 
 while true; do
-    POLICY_KEY=$(determine_policy_key)
+    OUTPUT=$(determine_policy_key)
+    POLICY_KEY="${OUTPUT%%|*}"
+    AVG_CPU="${OUTPUT##*|}"
     POLICY="${HOLISTIC_POLICIES[$POLICY_KEY]}"
 
-    echo -e "\n🔁 $(date) :: Chave: $POLICY_KEY"
+    echo -e "\n🔁 $(date) :: Chave: $POLICY_KEY :: Média CPU: ${AVG_CPU}%"
     echo -e "📦 Configuração de cruzamento:\n$POLICY"
 
     sleep 5

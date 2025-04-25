@@ -1,14 +1,13 @@
 #!/bin/bash
 
 load_intel_specs() {
-    #TDB em Watts (ex: 15W)
-    readonly MAX_TDP=$(cat /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw 2> /dev/null | awk '{print $1/1000000}') || 15 # Default TDP value -> Teste retornou 15 W executando direto do terminal
+    MAX_TDP=$(cat /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw 2>/dev/null | awk '{print $1/1000000}')
+    MAX_GPU_CLOCK=$(cat /sys/class/drm/card0/gt_max_freq_mhz 2>/dev/null)
+    CORES_TOTAL=$(nproc --all 2>/dev/null)
 
-    # Frequência máxima da GPU em MHz ( Fallback baseada no UHD Graphics 620 )
-    readonly MAX_GPU_CLOCK=$(cat /sys/class/drm/card0/gt_max_freq_mhz 2> /dev/null || echo 1000) # Default GPU clock value -> Teste retornou 1000 MHz executando direto do terminal e dado que é integrada, preciso só analisar ela
-    readonly MIN_GPU_CLOCK=$(cat /sys/class/drm/card0/gt_min_freq_mhz 2> /dev/null || echo 300) # Default GPU clock value -> Teste retornou 300 MHz executando direto do terminal e dado que é integrada, preciso só analisar ela
-
-    readonly CORES_TOTAL=$(nproc --all 2> /dev/null || echo 4) # Total de núcleos lógicos -> Teste retornou 4 executando direto do terminal
+    MAX_TDP=${MAX_TDP:-15}
+    MAX_GPU_CLOCK=${MAX_GPU_CLOCK:-1000}
+    CORES_TOTAL=${CORES_TOTAL:-4}
 }
 
 get_cpu_usage() {
