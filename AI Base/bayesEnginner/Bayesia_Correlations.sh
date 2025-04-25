@@ -1,9 +1,4 @@
-### Tentei remover o EPB por complexidade desnecessaria
-# Função para arredondar para cima
-ceil() {
-    echo $(( ($1 + $2 - 1) / $2 ))
-}
-
+#!/bin/bash
 declare -A HOLISTIC_POLICIES=(
     # Formato: "CPU Gov | Power Limit (%TDP) | TDP Limit (%TDP) | GPU Clock (%GPU_MAX) | | Algoritmo ZRAM | Streams | Swappiness"
     ["000"]="ondemand    $((MAX_TDP * 20 / 100)) $((MAX_TDP * 15 / 100)) $((MAX_GPU_CLOCK * 30 / 100)) zstd $((CORES_TOTAL * 25 / 100)) 10"
@@ -18,20 +13,3 @@ declare -A HOLISTIC_POLICIES=(
     ["090"]="performance $((MAX_TDP * 95 / 100)) $((MAX_TDP * 55 / 100)) $((MAX_GPU_CLOCK * 95 / 100)) lz4  $((CORES_TOTAL)) 60"
     ["100"]="performance $((MAX_TDP))           $((MAX_TDP))           $((MAX_GPU_CLOCK))           zstd $((CORES_TOTAL)) 65"
 )
-<< EOF
-Falta criar o que implementa a flag critical booleana
-Explique que porra são essas informações, funcionamento a nivel logico e eletrônico e seus acronimos.
-- CPU Gov
-- GPU Perf
-- EPB
-- Power Limit (%TDP)
-- TDP Limit (%TDP)
-- GPU Clock (%GPU_MAX)
-- VRAM Clock
-- Algoritmo ZRAM
-- Streams
-- Swappiness
-- lz4
-- lzo
-- zstd
-EOF

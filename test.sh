@@ -84,11 +84,7 @@ determine_policy_key() {
 
     key=$(printf "%03d" $((avg / 10 * 10)))
 
-    if [[ -v HOLISTIC_POLICIES["$key"] ]]; then
         echo "$key|$avg"
-    else
-        echo "000|$avg"
-    fi
 }
 
 echo "🚀 Iniciando motor de cruzamento bayesiano..."

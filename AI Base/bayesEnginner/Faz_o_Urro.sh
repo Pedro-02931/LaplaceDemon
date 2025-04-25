@@ -1,18 +1,18 @@
 #!/bin/bash
 faz_o_urro() {
-    local new_val="$1"
+    local cpu="$1"
     local -a history=()
     local sum=0 avg
 
     [[ -f "$HISTORY_FILE" ]] && mapfile -t history < "$HISTORY_FILE"
-    history+=("$new_val")
+    history+=("$cpu")
 
     if (( ${#history[@]} > MAX_HISTORY )); then
         history=("${history[@]: -$MAX_HISTORY}")
     fi
 
-    for val in "${history[@]}"; do
-        sum=$((sum + val))
+    for n in "${history[@]}"; do
+        sum=$((sum + n))
     done
 
     avg=$((sum / ${#history[@]}))
