@@ -120,3 +120,111 @@ flowchart TD
 
 **Explicação Humana:**  
 O coração do script é um loop que verifica constantemente se o sistema está dentro dos parâmetros desejados. Se não estiver, dispara as mudanças necessárias.
+---
+Para verificar se o serviço e o timer estão rodando e aplicando as configurações corretamente, siga os passos abaixo:
+
+---
+
+### **1. Verifique o status do timer**
+Use o comando abaixo para verificar se o timer está ativo e funcionando:
+
+```bash
+systemctl status urro.timer
+```
+
+- Se o timer estiver ativo, você verá algo como:
+  ```
+  ● urro.timer - URRO Timer (cada 5 segundos)
+     Loaded: loaded (/etc/systemd/system/urro.timer; enabled; vendor preset: enabled)
+     Active: active (waiting) since Fri 2025-04-25 14:30:00 UTC; 10s ago
+     Trigger: Fri 2025-04-25 14:30:05 UTC; 5s left
+  ```
+
+---
+
+### **2. Verifique o status do serviço**
+O serviço `urro.service` é executado pelo timer. Para verificar se ele está sendo acionado corretamente, use:
+
+```bash
+systemctl status urro.service
+```
+
+- Se o serviço estiver sendo executado periodicamente, você verá algo como:
+  ```
+  ● urro.service - URRO Engine - Motor de cruzamento bayesiano
+     Loaded: loaded (/etc/systemd/system/urro.service; enabled; vendor preset: enabled)
+     Active: inactive (dead) since Fri 2025-04-25 14:30:05 UTC; 5s ago
+     TriggeredBy: urro.timer
+  ```
+
+---
+
+### **3. Verifique os logs do serviço**
+Os logs do serviço podem ser visualizados com o comando:
+
+```bash
+journalctl -u urro.service
+```
+
+- Isso mostrará as mensagens geradas pelo script `urro_engine.sh`. Por exemplo:
+  ```
+  Apr 25 14:30:00 hostname urro_engine.sh[12345]: 🔁 Fri Apr 25 14:30:00 2025 :: Média CPU: 35% | Perfil: 040
+  Apr 25 14:30:00 hostname urro_engine.sh[12345]: → Governor: ondemand | TDP: 15 | Alg ZRAM: zstd | Streams: 2 | Swappiness: 10
+  ```
+
+---
+
+### **4. Verifique as configurações aplicadas**
+Você pode verificar manualmente se as configurações foram aplicadas corretamente:
+
+- **Governor da CPU**:
+  ```bash
+  cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+  ```
+
+- **TDP**:
+  ```bash
+  cat /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw
+  ```
+
+- **Algoritmo do ZRAM**:
+  ```bash
+  cat /sys/block/zram*/comp_algorithm
+  ```
+
+- **Swappiness**:
+  ```bash
+  cat /proc/sys/vm/swappiness
+  ```
+
+---
+
+### **5. Teste manual do script**
+Se quiser testar o script manualmente para verificar se ele aplica as configurações, execute o seguinte comando:
+
+```bash
+sudo /opt/urro/urro_engine.sh
+```
+
+Isso executará o script diretamente e aplicará as configurações. Você verá as mensagens no terminal, como:
+
+```
+🔁 Fri Apr 25 14:30:00 2025 :: Média CPU: 35% | Perfil: 040
+→ Governor: ondemand | TDP: 15 | Alg ZRAM: zstd | Streams: 2 | Swappiness: 10
+```
+
+---
+
+### **6. Verifique o comportamento do sistema**
+Observe se as configurações estão sendo aplicadas corretamente:
+- A frequência da CPU deve mudar de acordo com o governor configurado.
+- O algoritmo de compressão do ZRAM deve ser atualizado.
+- O valor de swappiness deve refletir o configurado.
+
+---
+
+Se algo não estiver funcionando como esperado, você pode verificar os logs do sistema para identificar possíveis erros:
+
+```bash
+journalctl -xe
+```
