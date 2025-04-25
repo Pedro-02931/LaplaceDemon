@@ -16,36 +16,26 @@ Ao receber um novo valor de uso da CPU como entrada, ela mantém um histórico d
 
 {% code overflow="wrap" %}
 ```bash
-readonly HISTORY_FILE="/var/opt/vemCaPutinha.harmonic.CPU_USAGE.state"
-readonly MAX_HISTORY=15
-readonly EMA_ALPHA=0.3
-declare CURRENT_EMA=0 # Inicializa a EMA
-
+#!/bin/bash
 faz_o_urro() {
-    local current_metric="$1" # Recebe a métrica atual (uso de CPU)
+    local cpu="$1"
     local -a history=()
-    local count=0 i=0 start_index
+    local sum=0 avg
 
-    # Carrega o histórico do arquivo, se existir
     [[ -f "$HISTORY_FILE" ]] && mapfile -t history < "$HISTORY_FILE"
+    history+=("$cpu")
 
-    # Adiciona a métrica atual ao histórico
-    history+=("$current_metric")
-    count=${#history[@]}
-
-    # Mantém o histórico com no máximo MAX_HISTORY itens
-    if (( count > MAX_HISTORY )); then
-        start_index=$((count - MAX_HISTORY))
-        history=("${history[@]:$start_index}") # Remove os mais antigos
-        count=$MAX_HISTORY
+    if (( ${#history[@]} > MAX_HISTORY )); then
+        history=("${history[@]: -$MAX_HISTORY}")
     fi
 
-    # Calcula a nova EMA (Média Móvel Exponencial)
-    # EMA_nova = alpha * valor_atual + (1 - alpha) * EMA_anterior
-    CURRENT_EMA=$(awk -v cv="$current_metric" -v a="$EMA_ALPHA" -v pe="$CURRENT_EMA" 'BEGIN {printf "%.0f", a * cv + (1 - a) * pe}')
+    for n in "${history[@]}"; do
+        sum=$((sum + n))
+    done
 
-    # Salva o histórico atualizado no arquivo
+    avg=$((sum / ${#history[@]}))
     printf "%s\n" "${history[@]}" > "$HISTORY_FILE"
+    echo "$avg"
 }
 ```
 {% endcode %}
