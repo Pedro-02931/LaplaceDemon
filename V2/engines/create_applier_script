@@ -1,0 +1,39 @@
+
+create_applier_script() {
+    cat << 'EOF' > "$APPLIER_SCRIPT"
+#!/bin/bash
+set -e # Exit on error
+
+APPLY_LOGIC_FILE="/etc/bayes_mem/bayes_apply_logic.sh"
+TREND_LOG="/tmp/bayes_trend.log"
+
+# Source the file containing the application logic functions
+if [[ -f "$APPLY_LOGIC_FILE" ]]; then
+    source "$APPLY_LOGIC_FILE"
+else
+    echo "ERROR: Apply logic file not found at $APPLY_LOGIC_FILE" >&2
+    exit 1
+fi
+
+# Read the latest average CPU usage calculated by the collector
+if [[ -f "$TREND_LOG" ]]; then
+    # Read last line in case multiple collectors ran somehow
+    current_avg_load=$(tail -n 1 "$TREND_LOG")
+    # Validate if it's a number
+    if ! [[ "$current_avg_load" =~ ^[0-9]+$ ]]; then
+       echo "WARN: Invalid value found in $TREND_LOG: '$current_avg_load'. Assuming 0." >&2
+       current_avg_load=0
+    fi
+else
+    echo "WARN: Trend log $TREND_LOG not found. Assuming 0 average load." >&2
+    current_avg_load=0
+fi
+
+# Call the main application function from the logic file
+apply_all_from_avg "$current_avg_load"
+
+exit 0
+EOF
+    chmod 700 "$APPLIER_SCRIPT"
+    chown root:root "$APPLIER_SCRIPT"
+}

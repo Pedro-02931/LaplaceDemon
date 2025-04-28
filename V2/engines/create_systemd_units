@@ -1,0 +1,78 @@
+create_systemd_units() {
+    # --- Collector Units ---
+    _create_collector_service() {
+        cat << EOF > "/etc/systemd/system/${COLLECTOR_SERVICE_NAME}.service"
+[Unit]
+Description=Bayesian High-Frequency CPU Collector
+Documentation=file://${COLLECTOR_SCRIPT}
+
+[Service]
+Type=oneshot
+ExecStart=${COLLECTOR_SCRIPT}
+# Minimal resource usage, runs quickly
+StandardOutput=null
+StandardError=append:${LOG_DIR}/bayes_collector.err
+EOF
+    }
+    _create_collector_timer() {
+        cat << EOF > "/etc/systemd/system/${COLLECTOR_SERVICE_NAME}.timer"
+[Unit]
+Description=Bayesian Collector Timer (1 second)
+Requires=${COLLECTOR_SERVICE_NAME}.service
+
+[Timer]
+Unit=${COLLECTOR_SERVICE_NAME}.service
+OnBootSec=5s
+OnUnitActiveSec=1s # Run every second
+AccuracySec=100ms # High accuracy needed
+
+[Install]
+WantedBy=timers.target
+EOF
+    }
+
+    # --- Applier Units ---
+    _create_applier_service() {
+        cat << EOF > "/etc/systemd/system/${APPLIER_SERVICE_NAME}.service"
+[Unit]
+Description=Bayesian Low-Frequency Settings Applier
+Documentation=file://${APPLIER_SCRIPT} file://${APPLY_LOGIC_FILE}
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+# Higher priority for applying settings
+Nice=-10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=0
+ExecStart=${APPLIER_SCRIPT}
+StandardOutput=append:${LOG_DIR}/bayes_mem.log
+StandardError=append:${LOG_DIR}/bayes_mem.err
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    }
+    _create_applier_timer() {
+        cat << EOF > "/etc/systemd/system/${APPLIER_SERVICE_NAME}.timer"
+[Unit]
+Description=Bayesian Applier Timer (15 seconds)
+Requires=${APPLIER_SERVICE_NAME}.service
+
+[Timer]
+Unit=${APPLIER_SERVICE_NAME}.service
+OnBootSec=1min # Allow collector to run a bit first
+OnUnitActiveSec=15s # Apply settings every 15 seconds
+AccuracySec=1s
+Persistent=true # Remember last run across reboots
+
+[Install]
+WantedBy=timers.target
+EOF
+    }
+
+    _create_collector_service
+    _create_collector_timer
+    _create_applier_service
+    _create_applier_timer
+}

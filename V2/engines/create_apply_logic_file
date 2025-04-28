@@ -1,0 +1,213 @@
+create_apply_logic_file() {
+    # Cria o script que contém a lógica para definir e aplicar políticas
+    cat << 'EOF' > "$APPLY_LOGIC_FILE"
+#!/bin/bash
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+mkdir -p "$BASEDIR"
+# Source HW Specs first if they are needed globally here
+if [[ -f "/etc/bayes_mem/hw_specs.conf" ]]; then
+    source "/etc/bayes_mem/hw_specs.conf"
+else
+    echo "ERROR: hw_specs.conf not found!" >&2
+    # Set defaults to avoid script errors
+    HW_CORES_TOTAL=${HW_CORES_TOTAL:-4}
+    HW_MAX_TDP=${HW_MAX_TDP:-15}
+    HW_AVAILABLE_GOVERNORS=${HW_AVAILABLE_GOVERNORS:-"ondemand userspace performance"}
+fi
+
+declare -A BAYES_POLICIES # Renamed from HOLISTIC_POLICIES
+
+# Initialize policies based on HW specs
+init_policies() {
+    local gov_p perf_avail=0 gov_u user_avail=0 gov_o ondemand_avail=0
+    [[ "$HW_AVAILABLE_GOVERNORS" == *performance* ]] && perf_avail=1
+    [[ "$HW_AVAILABLE_GOVERNORS" == *userspace* ]] && user_avail=1
+    [[ "$HW_AVAILABLE_GOVERNORS" == *ondemand* ]] && ondemand_avail=1
+
+    gov_p=$([[ $perf_avail -eq 1 ]] && echo "performance" || echo "ondemand")
+    gov_u=$([[ $user_avail -eq 1 ]] && echo "userspace" || echo "ondemand")
+    gov_o=$([[ $ondemand_avail -eq 1 ]] && echo "ondemand" || echo "performance")
+
+    local tdp_max=$HW_MAX_TDP
+    local tdp_high=$(( (HW_MAX_TDP * 90 + 99) / 100 )); [[ $tdp_high -lt 1 ]] && tdp_high=1
+    local tdp_low=$(( (HW_MAX_TDP * 50 + 99) / 100 )); [[ $tdp_low -lt 1 ]] && tdp_low=1
+    local tdp_min=$(( (HW_MAX_TDP * 30 + 99) / 100 )); [[ $tdp_min -lt 1 ]] && tdp_min=1
+
+    local streams_high=$HW_CORES_TOTAL
+    local streams_med=$(( (HW_CORES_TOTAL * 75 + 99) / 100 )); [[ $streams_med -lt 1 ]] && streams_med=1
+    local streams_low=$(( (HW_CORES_TOTAL * 50 + 99) / 100 )); [[ $streams_low -lt 1 ]] && streams_low=1
+
+    # Policy Format: "Governor TDP_Min TDP_Max ZRAM_Algo ZRAM_Streams Swappiness"
+    BAYES_POLICIES["080"]="${gov_p} ${tdp_high} ${tdp_max} zstd ${streams_high} 60" # High load >= 80%
+    BAYES_POLICIES["050"]="${gov_u} ${tdp_low} ${tdp_high} lz4 ${streams_med} 40"   # Medium load >= 50%
+    BAYES_POLICIES["000"]="${gov_o} ${tdp_min} ${tdp_low} lzo-rle ${streams_low} 30" # Low load < 50% (default)
+}
+
+# Determine policy key based on average CPU load
+determine_policy_key_from_avg() {
+    local avg_load=$1 key="000" # Default to low load
+    if (( avg_load >= 80 )); then key="080";
+    elif (( avg_load >= 50 )); then key="050"; fi
+    echo "$key"
+}
+
+# --- Application Functions ---
+apply_cpu_governor() {
+    local cpu_gov="$1"
+    local last_gov_file="${BASEDIR}/last_gov"
+    local cooldown_file="${BASEDIR}/gov_cooldown"
+
+    # Garante que o diretório BASEDIR existe
+    
+
+    local last_gov="none"
+    if [[ -f "$last_gov_file" ]]; then
+        last_gov=$(cat "$last_gov_file")
+    fi
+
+    # Só muda governor se diferente e passaram ≥30s desde última mudança
+    if [[ "$cpu_gov" != "$last_gov" ]] && \
+       
+
+        for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+            [[ ! -f "$cooldown_file" || $(($(date +%s) - $(date -r "$cooldown_file" +%s))) -ge 10 ]]; then
+            echo "$cpu_gov" | tee "$cpu" > /dev/null
+        done
+
+        echo "$cpu_gov" > "$last_gov_file"
+        touch "$cooldown_file"
+    fi
+}
+
+apply_tdp_limit() {
+local min_limit="$1"
+    local max_limit="$2"
+    local last_power_file="${BASEDIR}/last_power"
+    local cooldown_file="${BASEDIR}/power_cooldown"
+
+    local current_min=$(cat /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw 2>/dev/null | awk '{print $1/1000000}')
+    local current_max=$(cat /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw 2>/dev/null | awk '{print $1/1000000}')
+
+    # Carrega último min e max aplicados, se existirem
+    local last_min=0
+    local last_max=0
+    if [[ -f "$last_power_file" ]]; then
+        read last_min last_max < "$last_power_file"
+    fi
+
+    # Só aplica se mudou de verdade ou se cooldown passou
+    if [[ "$min_limit" != "$last_min" || "$max_limit" != "$last_max" ]] && \
+       [[ ! -f "$cooldown_file" || $(($(date +%s) - $(date -r "$cooldown_file" +%s))) -ge 15 ]]; then
+        
+        # Ajuste máximo: ±2W por ciclo para evitar transições abruptas
+        (( min_limit = current_min + (min_limit - current_min > 0 ? 2 : -2) ))
+        (( max_limit = current_max + (max_limit - current_max > 0 ? 2 : -2) ))
+
+        (( min_limit > 0 )) && echo $((min_limit * 1000000)) | tee /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw > /dev/null
+        (( max_limit > 0 )) && echo $((max_limit * 1000000)) | tee /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw > /dev/null
+
+        echo "$min_limit $max_limit" > "$last_power_file"
+        touch "$cooldown_file"
+    fi
+
+}
+
+apply_swappiness() {
+    local target_swap="$1"
+    local last_swap_file="${BASEDIR}/last_swappiness"
+    local cooldown_file="${BASEDIR}/cooldown_swappiness"
+
+    mkdir -p "$BASEDIR"
+
+    local current_swap=60
+    if [[ -f "$last_swap_file" ]]; then
+        current_swap=$(cat "$last_swap_file")
+    else
+        current_swap=$(sysctl -n vm.swappiness 2>/dev/null || echo 60)
+    fi
+
+    # Só aplica se for diferente E cooldown passou
+    if [[ "$current_swap" != "$target_swap" ]] && \
+       [[ ! -f "$cooldown_file" || $(($(date +%s) - $(date -r "$cooldown_file" +%s))) -ge 25]]; then
+
+        if sysctl -q -w vm.swappiness="$target_swap"; then
+            echo "$target_swap" > "$last_swap_file"
+            touch "$cooldown_file"
+        else
+            echo "WARN: Failed to set swappiness" >&2
+        fi
+    fi
+}
+
+
+setup_zram_device() {
+    local alg="$1"
+    local streams="$2"
+    local last_alg_file="${BASEDIR}/last_zram_algorithm"
+    local last_streams_file="${BASEDIR}/last_zram_streams"
+    local cooldown_file="${BASEDIR}/cooldown_zram"
+
+    mkdir -p "$BASEDIR"
+
+    local current_alg="none"
+    local current_streams=0
+
+    [[ -f "$last_alg_file" ]] && current_alg=$(cat "$last_alg_file")
+    [[ -f "$last_streams_file" ]] && current_streams=$(cat "$last_streams_file")
+
+    # Atualiza algoritmo se necessário e cooldown respeitado
+    if [[ "$current_alg" != "$alg" ]] && \
+       [[ ! -f "$cooldown_file" || $(($(date +%s) - $(date -r "$cooldown_file" +%s))) -ge 35 ]]; then
+
+        for zram in /sys/block/zram*/comp_algorithm; do
+            echo "$alg" | tee "$zram" > /dev/null
+        done
+        echo "$alg" > "$last_alg_file"
+        touch "$cooldown_file"
+    fi
+
+    # Atualiza número de streams se necessário
+    if (( streams > 0 )) && (( current_streams != streams )) && \
+       [[ ! -f "$cooldown_file" || $(($(date +%s) - $(date -r "$cooldown_file" +%s))) -ge 30 ]]; then
+
+        for dev in /dev/zram*; do
+            [[ -e "$dev" ]] && swapoff "$dev" 2>/dev/null || true
+        done
+        sleep 1  # Kernel precisa respirar
+        modprobe -r zram 2>/dev/null || true
+        modprobe zram num_devices="$streams"
+
+        echo "$streams" > "$last_streams_file"
+        touch "$cooldown_file"
+    fi
+}
+
+# --- Main Function called by Applier ---
+apply_all_from_avg() {
+    local avg_cpu_load=$1
+
+    init_policies # Recalculate policies based on potentially updated HW specs (though unlikely)
+
+    local policy_key=$(determine_policy_key_from_avg "$avg_cpu_load")
+    local selected_policy="${BAYES_POLICIES[$policy_key]}"
+
+    if [[ -z "$selected_policy" ]]; then
+        echo "ERROR: No policy found for key $policy_key (Avg Load: $avg_cpu_load)" >&2
+        return 1
+    fi
+
+    read -r gov tdp_min tdp_max z_algo z_streams swapness <<< "$selected_policy"
+
+    # Apply settings sequentially
+    apply_cpu_governor "$gov"
+    apply_tdp_limit "$tdp_min" "$tdp_max"
+    setup_zram_device "$z_algo" "$z_streams" # Handles algo, streams, size, swap on/off
+    apply_swappiness "$swapness"
+
+    # echo "Applied policy $policy_key for avg load $avg_cpu_load" # Optional debug log
+}
+EOF
+    chmod 644 "$APPLY_LOGIC_FILE"
+    chown root:root "$APPLY_LOGIC_FILE"
+}
+

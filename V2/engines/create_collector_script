@@ -1,0 +1,73 @@
+create_collector_script() {
+    cat << 'EOF' > "$COLLECTOR_SCRIPT"
+#!/bin/bash
+set -e # Exit immediately on error, but allow pipes to fail without exiting if checked
+
+HISTORY_FILE="/tmp/bayes_history"
+TREND_LOG="/tmp/bayes_trend.log"
+MAX_HISTORY=10 # Number of samples for moving average
+
+# Calculate moving average of CPU usage
+faz_o_urro() {
+    local new_val="$1" history_arr=() sum=0 avg=0 count=0
+    # Read history, add new value, trim if needed
+    [[ -f "$HISTORY_FILE" ]] && mapfile -t history_arr < "$HISTORY_FILE"
+    history_arr+=("$new_val")
+    count=${#history_arr[@]}
+    if (( count > MAX_HISTORY )); then
+        history_arr=("${history_arr[@]: -$MAX_HISTORY}")
+        count=$MAX_HISTORY
+    fi
+    # Calculate sum
+    for val in "${history_arr[@]}"; do sum=$((sum + val)); done
+    # Calculate average
+    (( count > 0 )) && avg=$((sum / count))
+    # Save updated history and output average
+    printf "%s\n" "${history_arr[@]}" > "$HISTORY_FILE"
+    echo "$avg"
+}
+
+# Get current CPU usage percentage
+get_cpu_usage() {
+    local stat_hist_file="${HISTORY_FILE}.stat"
+    local cpu_line prev_line last_total curr_total diff_idle diff_total usage=0
+    # Read current /proc/stat cpu line
+    cpu_line=$(grep -E '^cpu ' /proc/stat || echo "cpu 0 0 0 0 0 0 0 0 0 0")
+    # Read previous line from history file
+    prev_line=$(cat "$stat_hist_file" 2>/dev/null || echo "cpu 0 0 0 0 0 0 0 0 0 0")
+    # Save current line for next iteration
+    echo "$cpu_line" > "$stat_hist_file"
+
+    # Extract values - user nice system idle iowait irq softirq
+    read -r _ p_user p_nice p_system p_idle p_iowait p_irq p_softirq _ _ <<< "$prev_line"
+    read -r _ c_user c_nice c_system c_idle c_iowait c_irq c_softirq _ _ <<< "$cpu_line"
+
+    # Calculate totals and diffs
+    last_total=$((p_user + p_nice + p_system + p_idle + p_iowait + p_irq + p_softirq))
+    curr_total=$((c_user + c_nice + c_system + c_idle + c_iowait + c_irq + c_softirq))
+    diff_idle=$((c_idle - p_idle))
+    diff_total=$((curr_total - last_total))
+
+    # Calculate usage percentage
+    if (( diff_total > 0 )); then
+        # Use floating point for precision before rounding
+        usage=$(awk -v dt="$diff_total" -v di="$diff_idle" 'BEGIN { printf "%.0f", (100 * (dt - di)) / dt }')
+    fi
+    # Ensure usage is within 0-100 range
+    (( usage < 0 )) && usage=0
+    (( usage > 100 )) && usage=100
+    echo "$usage"
+}
+
+# --- Main Collector Logic ---
+current_usage=$(get_cpu_usage)
+average_usage=$(faz_o_urro "$current_usage")
+
+# Write the current average to the trend log for the applier to read
+echo "$average_usage" > "$TREND_LOG"
+
+exit 0
+EOF
+    chmod 700 "$COLLECTOR_SCRIPT"
+    chown root:root "$COLLECTOR_SCRIPT"
+}
