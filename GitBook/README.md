@@ -4,7 +4,7 @@ description: >-
   https://www.linkedin.com/in/pedro-mota-95046b356/
 ---
 
-# LICENSE GPL2
+# LICENSE GPL2 - INCOMPLETO
 
 ```
                     GNU GENERAL PUBLIC LICENSE
@@ -12,7 +12,6 @@ description: >-
 
  PS: Não peço nada além de contato e ajuda, me chamem no linkedin ou me
  façam um pix no email dx1308@pm.me caso seja util
- PS2: Se me copiar sem nem ao menos me fazer referência, dá o bumbum
  Linkedin: https://www.linkedin.com/in/pedro-mota-95046b356/
 
  Copyright (C) 1989, 1991 Free Software Foundation, Inc.,

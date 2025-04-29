@@ -1,6 +1,6 @@
 # Table of contents
 
-* [LICENSE GPL2](README.md)
+* [LICENSE GPL2 - INCOMPLETO](README.md)
 
 ## Fundamentos da AGI
 
@@ -44,10 +44,10 @@
   * [Terminar - Seleção de Configuração](automacao/alma/terminar-selecao-de-configuracao.md)
   * [Terminar - Coletas](automacao/alma/terminar-coletas.md)
 
-## Vem ca Putinha
+## GANHOS ESPERADOS
 
-* [Ganhos Esperados](vem-ca-putinha/ganhos-esperados.md)
-  * [Armazenamento -  O que muda, na prática?](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/README.md)
-    * [Comparação com a Formatação Tradicional: Vantagens Reais da Configuração Otimizada](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/comparacao-com-a-formatacao-tradicional-vantagens-reais-da-configuracao-otimizada.md)
-    * [Glossário Técnico Explicado](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/glossario-tecnico-explicado.md)
-    * [Blá Blá Blá tecnico](vem-ca-putinha/ganhos-esperados/armazenamento-o-que-muda-na-pratica/bla-bla-bla-tecnico.md)
+* [Ganhos Esperados](ganhos-esperados/ganhos-esperados/README.md)
+  * [Armazenamento -  O que muda, na prática?](ganhos-esperados/ganhos-esperados/armazenamento-o-que-muda-na-pratica/README.md)
+    * [Comparação com a Formatação Tradicional: Vantagens Reais da Configuração Otimizada](ganhos-esperados/ganhos-esperados/armazenamento-o-que-muda-na-pratica/comparacao-com-a-formatacao-tradicional-vantagens-reais-da-configuracao-otimizada.md)
+    * [Glossário Técnico Explicado](ganhos-esperados/ganhos-esperados/armazenamento-o-que-muda-na-pratica/glossario-tecnico-explicado.md)
+    * [Blá Blá Blá tecnico](ganhos-esperados/ganhos-esperados/armazenamento-o-que-muda-na-pratica/bla-bla-bla-tecnico.md)
