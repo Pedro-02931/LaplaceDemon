@@ -1,3 +1,7 @@
+---
+description: GNU GENERAL PUBLIC LICENSE                        Version 3, 29 June 2007
+---
+
 # A Consciência como Glitch e o "Eu" como Variável de Ambiente volátil
 
 A "consciência", essa sensação de "eu estou aqui", "sou eu que penso", não tem nada de divino ou especial nisso aí, todos temos, e isso é só o sistema se observando! O sistema roda no agora e com acesso privilegiado ao próprio rastro de execução que chamamos de memória e a visão em primeira pessoa é o registro da existência te mostrando, em tempo real, o que ainda não foi completamente pro caralho.

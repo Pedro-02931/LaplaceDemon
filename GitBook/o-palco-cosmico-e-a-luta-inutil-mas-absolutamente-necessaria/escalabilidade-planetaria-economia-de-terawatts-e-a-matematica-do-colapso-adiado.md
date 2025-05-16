@@ -1,8 +1,10 @@
 ---
-description: Gerado pelo DeepSeek e tudo é 100% teorico.
+description: GNU GENERAL PUBLIC LICENSE                        Version 3, 29 June 2007
 ---
 
 # Escalabilidade Planetária: Economia De TeraWatts e a Matemática do Colapso Adiado
+
+Gerado pelo DeepSeek e tudo é 100% teorico.
 
 **1. Batalha Contra o Static Overhead (Modo Default)**
 

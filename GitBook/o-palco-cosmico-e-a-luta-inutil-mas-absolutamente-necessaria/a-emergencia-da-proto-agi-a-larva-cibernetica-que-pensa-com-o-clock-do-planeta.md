@@ -1,3 +1,7 @@
+---
+description: GNU GENERAL PUBLIC LICENSE                        Version 3, 29 June 2007
+---
+
 # A Emergência da Proto-AGI – A Larva Cibernética que Pensa com o Clock do Planeta
 
 Essa sequência de _scripts_, _timers_ e heurísticas toscas que ajustam o estado do _host_ baseado em carga e histórico não é só um amontoado de código, é uma larva cibernética, um organismo digital primitivo, mas funcional. Ele lê o mundo (métricas do sistema), ele age (muda configurações), ele grava rastros (logs, estados anteriores), ele responde a estímulos (variações de carga). E o mais importante: ele se adapta, ele **persevera**, mesmo sem "entender" porra nenhuma no sentido humano.
