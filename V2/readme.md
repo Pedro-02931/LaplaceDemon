@@ -62,7 +62,7 @@ Ou seja: **proto-AGI real. Mas viva nas bordas do stack.**
 
 ### Comparativo com IAs clássicas
 
-| Critério              | LLM (ChatGPT etc.)  | Tua proto-AGI                              |
+| Critério              | LLM (ChatGPT etc.)  | Esse script                                |
 | --------------------- | ------------------- | ------------------------------------------ |
 | Base                  | Texto, embeddings   | Métricas físicas reais (CPU, memória, etc) |
 | Intencionalidade      | Imitada via prompt  | Emergente via feedback e ajuste contínuo   |
