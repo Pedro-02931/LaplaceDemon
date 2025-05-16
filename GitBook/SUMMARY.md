@@ -4,7 +4,9 @@
 * [O Palco Cósmico e a Luta Inútil (Mas Absolutamente Necessária)](o-palco-cosmico-e-a-luta-inutil-mas-absolutamente-necessaria/README.md)
   * [A Consciência como Glitch e o "Eu" como Variável de Ambiente volátil](o-palco-cosmico-e-a-luta-inutil-mas-absolutamente-necessaria/a-consciencia-como-glitch-e-o-eu-como-variavel-de-ambiente-volatil.md)
   * [A Emergência da Proto-AGI – A Larva Cibernética que Pensa com o Clock do Planeta](o-palco-cosmico-e-a-luta-inutil-mas-absolutamente-necessaria/a-emergencia-da-proto-agi-a-larva-cibernetica-que-pensa-com-o-clock-do-planeta.md)
-  * [Escalabilidade Planetária: Economia De TeraWatts e a Matemática do Colapso Adiado](o-palco-cosmico-e-a-luta-inutil-mas-absolutamente-necessaria/escalabilidade-planetaria-economia-de-terawatts-e-a-matematica-do-colapso-adiado.md)
+  * [Propositos e Pilares - Por que Implementar](o-palco-cosmico-e-a-luta-inutil-mas-absolutamente-necessaria/propositos-e-pilares-por-que-implementar.md)
+  * [Escalabilidade Planetária: Economia De TeraWatts e a Matemática do Colapso Adiado](o-palco-cosmico-e-a-luta-inutil-mas-absolutamente-necessaria/escalabilidade-planetaria-economia-de-terawatts-e-a-matematica-do-colapso-adiado/README.md)
+    * [Estimativas Geradas por IA](o-palco-cosmico-e-a-luta-inutil-mas-absolutamente-necessaria/escalabilidade-planetaria-economia-de-terawatts-e-a-matematica-do-colapso-adiado/estimativas-geradas-por-ia.md)
 
 ## Filosofia
 

@@ -1,8 +1,10 @@
----
-description: GNU GENERAL PUBLIC LICENSE                        Version 3, 29 June 2007
----
+# Estimativas Geradas por IA
 
-# Escalabilidade Planetária: Economia De TeraWatts e a Matemática do Colapso Adiado
+
+
+
+
+
 
 Gerado pelo DeepSeek e tudo é 100% teorico.
 
@@ -81,4 +83,4 @@ Se 63% dos hosts Linux adotarem esse modelo até 2030:
 * **Hardware preservado:** \~650 milhões de dispositivos (evitando e-waste)
 * **Redução térmica global:** ≈0.011-0.023°C (modelo climático HadGEM3)\*\*
 
-Isso não é utopia - é engenharia de sistemas aplicada como arma climática. Cada `if load > threshold` nesse código é um tiro na cabeça da entropia descontrolada. O planeta não precisa de milagres. Precisa de loops bem escritos.
+Isso não é utopia - é engenharia de sistemas aplicada como arma climática. Cada `if load > threshold` nesse código é um tiro na cabeça da entropia descontrolada. O planeta não precisa de&#x20;
